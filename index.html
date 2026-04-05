@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Frost Fleet | Elite Hub</title>
+    <title>FTS DATA CENTRE</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { 
@@ -181,12 +181,12 @@
 <body>
 
     <aside class="sidebar">
-        <div class="sidebar-header">Frost Tracker</div>
+        <div class="sidebar-header">FTS DATA</div>
         <div class="sidebar-content" id="sidebar-info">
             <p><strong>System:</strong> Operational</p>
             <p id="view-indicator">Showing: <b>Current Week</b></p>
             <p style="margin-top:10px; font-size: 11px; opacity: 0.6;">Rate: £22.04/hr (Inc. NI/Pen/Tax)</p>
-            <p style="margin-top:10px; color:var(--payroll)">Tip: Hover over "DEFECT" to see details.</p>
+            <p style="margin-top:10px; color:var(--payroll)">Tip: Hover over status for check details.</p>
         </div>
         <div class="map-dock">
             <iframe id="sidebar-map" referrerpolicy="no-referrer-when-downgrade"></iframe>
@@ -195,7 +195,7 @@
 
     <div class="main-wrapper">
         <div class="header">
-            <div class="logo">Frost<span>Fleet</span> Elite</div>
+            <div class="logo">FTS <span>DATA CENTRE</span></div>
             <div class="action-bar">
                 <div class="view-toggle">
                     <button class="toggle-btn active" id="btn-curr" onclick="setView('current')">Current</button>
@@ -203,7 +203,7 @@
                 </div>
                 <a href="https://docs.google.com/spreadsheets/d/1LJpZqCfRlNNNr494sCB5Ax1hFwFh4e7LzAIa0sTHoks/edit?usp=sharing" target="_blank" class="btn">⛽ Fuel Logs</a>
                 <a href="https://docs.google.com/spreadsheets/d/1nZvQOplnru5hUCy4VRmm7bVHOwuJyzvV4CD3DyDGmO0/edit?usp=sharing" target="_blank" class="btn">🚛 Trailer Checks</a>
-                <button class="btn" onclick="loadData()">🔄 Refresh Fleet</button>
+                <button class="btn" onclick="loadData()">🔄 Refresh Hub</button>
             </div>
         </div>
 
@@ -270,11 +270,9 @@
             tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; padding:50px; color:#666;'>POLLING DATA...</td></tr>";
 
             try {
-                // 1. Fetch Vehicle Checks
                 const vRes = await fetch(GOOGLE_SCRIPT_URL);
                 const vehicleData = await vRes.json();
 
-                // 2. Dates
                 const now = new Date();
                 const day = now.getDay();
                 const diffToMonday = day === 0 ? -6 : 1 - day;
@@ -288,7 +286,6 @@
                     startRange.setDate(startRange.getDate() - 7);
                 }
 
-                // 3. Fetch Logs
                 const { data: logs, error } = await _supabase
                     .from('fleet_logs')
                     .select('*')
@@ -339,8 +336,6 @@
                 });
 
                 tbody.innerHTML = "";
-                
-                // Sort Alphabetically
                 const driverKeys = Object.keys(report).sort();
                 
                 driverKeys.forEach(key => {
@@ -366,7 +361,6 @@
                     `;
                 });
 
-                // Health Calc
                 const totalDrivers = driverKeys.length || 1;
                 const healthPct = Math.round(((totalDrivers - defectCount) / totalDrivers) * 100);
                 const healthColor = healthPct === 100 ? 'var(--active)' : (healthPct > 80 ? 'var(--payroll)' : 'var(--red)');
@@ -389,7 +383,6 @@
         }
 
         window.onload = loadData;
-        // Only auto-refresh on current view
         setInterval(() => { if(currentView === 'current') loadData(); }, 60000); 
     </script>
 </body>
