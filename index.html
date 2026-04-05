@@ -7,45 +7,43 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --red: #E62411; --bg: #111111; --card: #1d1f20; --text: #f4f7f6; --border: #333; --active: #28a745; --payroll: #f39c12; }
-        [data-theme="light"] { --bg: #f4f7f6; --card: #ffffff; --text: #2d3436; --border: #edf2f7; }
-        
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; color: var(--text); overflow: hidden; transition: background 0.3s; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; color: var(--text); overflow: hidden; }
         
         /* SIDEBAR */
         .sidebar { width: 320px; background: var(--card); border-right: 2px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
-        .sidebar-header { padding: 25px; border-bottom: 1px solid var(--border); font-weight: 900; color: var(--red); text-transform: uppercase; font-size: 1.2rem; letter-spacing: 1px; }
-        .sidebar-content { flex: 1; padding: 20px; font-size: 13px; color: #888; overflow-y: auto; line-height: 1.6; }
-        .map-dock { height: 320px; border-top: 3px solid var(--red); background: #000; position: relative; }
+        .sidebar-header { padding: 25px; border-bottom: 1px solid var(--border); font-weight: 900; color: var(--red); text-transform: uppercase; font-size: 1.2rem; }
+        .sidebar-content { flex: 1; padding: 20px; font-size: 13px; color: #888; overflow-y: auto; }
+        .map-dock { height: 320px; border-top: 3px solid var(--red); background: #000; }
         #sidebar-map { width: 100%; height: 100%; border: none; display: none; }
         
-        /* MAIN CONTENT */
+        /* MAIN */
         .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 25px; }
-        .header { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 20px 30px; border-radius: 12px; border-bottom: 5px solid var(--red); margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .header { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 20px 30px; border-radius: 12px; border-bottom: 5px solid var(--red); margin-bottom: 25px; }
         .logo { font-size: 26px; font-weight: 900; text-transform: uppercase; }
         .logo span { color: var(--red); }
         
-        /* STATS */
+        /* TOGGLE & BUTTONS */
+        .action-bar { display: flex; gap: 10px; align-items: center; }
+        .view-toggle { background: #333; padding: 5px; border-radius: 8px; display: flex; gap: 5px; margin-right: 10px; }
+        .toggle-btn { padding: 8px 15px; border-radius: 5px; border: none; cursor: pointer; font-size: 10px; font-weight: 800; text-transform: uppercase; color: #777; background: transparent; transition: 0.3s; }
+        .toggle-btn.active { background: var(--red); color: white; }
+        
+        .btn { background: var(--red); color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 10px; text-decoration: none; display: inline-flex; align-items: center; }
+        
+        /* TABLE & STATS */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-bottom: 25px; }
         .stat-card { background: var(--card); padding: 20px; border-radius: 10px; border-left: 5px solid #333; }
         .stat-card h3 { margin: 0; font-size: 11px; color: #888; text-transform: uppercase; }
         .stat-card p { margin: 10px 0 0; font-size: 32px; font-weight: 800; }
         
-        /* TABLE */
-        .table-container { background: var(--card); border-radius: 12px; overflow-x: auto; border: 1px solid var(--border); box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
+        .table-container { background: var(--card); border-radius: 12px; overflow-x: auto; border: 1px solid var(--border); }
         table { width: 100%; border-collapse: collapse; min-width: 1100px; }
-        th { padding: 18px; font-size: 11px; text-transform: uppercase; color: #777; border-bottom: 2px solid var(--border); text-align: left; background: rgba(255,255,255,0.02); }
+        th { padding: 18px; font-size: 11px; text-transform: uppercase; color: #777; border-bottom: 2px solid var(--border); text-align: left; }
         td { padding: 16px 18px; border-bottom: 1px solid var(--border); font-size: 14px; }
-        tr:hover td { background: rgba(255,255,255,0.01); }
-
-        /* UI ELEMENTS */
         .badge { padding: 5px 10px; border-radius: 4px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
         .badge-active { background: var(--active); color: white; }
         .map-link { color: #3498db; cursor: pointer; font-weight: 800; border-bottom: 1px dashed #3498db; }
-        .btn { background: var(--red); color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 11px; transition: 0.2s; }
-        .btn:hover { opacity: 0.8; transform: scale(1.02); }
-        
-        /* VEHICLE CHECK HOVER INFO */
-        .check-cell { font-weight: bold; cursor: help; text-decoration: underline dotted; text-underline-offset: 4px; }
+        .check-cell { font-weight: bold; cursor: help; }
     </style>
 </head>
 <body>
@@ -53,9 +51,8 @@
     <aside class="sidebar">
         <div class="sidebar-header">Frost Tracker</div>
         <div class="sidebar-content" id="sidebar-info">
-            <p><strong>System:</strong> Operational</p>
-            <p>Tracking Live Logs & Vehicle Defect Details.</p>
-            <p style="margin-top:10px; color:var(--payroll)">Tip: Hover over "DEFECT" to see details.</p>
+            <p><strong>Status:</strong> Operational</p>
+            <p id="view-indicator">Showing: <b>Current Week</b></p>
         </div>
         <div class="map-dock">
             <iframe id="sidebar-map" referrerpolicy="no-referrer-when-downgrade"></iframe>
@@ -65,14 +62,22 @@
     <div class="main-wrapper">
         <div class="header">
             <div class="logo">Frost<span>Fleet</span> Elite</div>
-            <button class="btn" onclick="loadData()">🔄 Refresh Fleet</button>
+            <div class="action-bar">
+                <div class="view-toggle">
+                    <button class="toggle-btn active" id="btn-curr" onclick="setView('current')">Current Week</button>
+                    <button class="toggle-btn" id="btn-prev" onclick="setView('previous')">Last Week</button>
+                </div>
+                <a href="https://docs.google.com/spreadsheets/d/1LJpZqCfRlNNNr494sCB5Ax1hFwFh4e7LzAIa0sTHoks/edit?usp=sharing" target="_blank" class="btn">⛽ Fuel</a>
+                <a href="https://docs.google.com/spreadsheets/d/1nZvQOplnru5hUCy4VRmm7bVHOwuJyzvV4CD3DyDGmO0/edit?usp=sharing" target="_blank" class="btn">🚛 Trailers</a>
+                <button class="btn" onclick="loadData()">🔄 Refresh</button>
+            </div>
         </div>
 
         <div class="stats-grid">
             <div class="stat-card"><h3>Drivers</h3><p id="stat-total">0</p></div>
-            <div class="stat-card" style="border-left-color: var(--active)"><h3>On Duty</h3><p id="stat-active" style="color:var(--active)">0</p></div>
-            <div class="stat-card" style="border-left-color: var(--red)"><h3>15hr Alerts</h3><p id="stat-long" style="color:var(--red)">0</p></div>
-            <div class="stat-card" style="border-left-color: var(--payroll)"><h3>Nights Out</h3><p id="stat-nights" style="color:var(--payroll)">0</p></div>
+            <div class="stat-card" style="border-left-color: var(--active)"><h3>On Duty</h3><p id="stat-active">0</p></div>
+            <div class="stat-card" style="border-left-color: var(--red)"><h3>15hr Alerts</h3><p id="stat-long">0</p></div>
+            <div class="stat-card" style="border-left-color: var(--payroll)"><h3>Nights Out</h3><p id="stat-nights">0</p></div>
         </div>
 
         <div class="table-container">
@@ -100,40 +105,54 @@
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzeQNNTsffmVMKNFhyJ9VQ-LVF_R58QMBTQQnC5enWwSrKaVHv9vC5r8_pryxAonfmXlg/exec";
         
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let currentView = 'current'; // 'current' or 'previous'
+
+        function setView(view) {
+            currentView = view;
+            document.getElementById('btn-curr').classList.toggle('active', view === 'current');
+            document.getElementById('btn-prev').classList.toggle('active', view === 'previous');
+            document.getElementById('view-indicator').innerHTML = `Showing: <b>${view === 'current' ? 'Current Week' : 'Previous Week'}</b>`;
+            loadData();
+        }
 
         function updateDock(coords, name) {
             const mapFrame = document.getElementById('sidebar-map');
             mapFrame.style.display = "block";
             mapFrame.src = `https://www.google.com/maps?q=${coords}&t=k&z=15&output=embed`;
-            document.getElementById('sidebar-info').innerHTML = `
-                <div style="background:var(--red);padding:15px;border-radius:8px;color:white;">
-                    <small>SATELLITE LOCK:</small><br>
-                    <strong>${name.toUpperCase()}</strong><br>
-                    <a href="https://www.google.com/maps?q=${coords}" target="_blank" style="color:white; font-size:10px; text-decoration:underline;">Open Maps App</a>
-                </div>
-            `;
+            document.getElementById('sidebar-info').innerHTML = `<div style="background:var(--red);padding:15px;border-radius:8px;color:white;"><strong>${name.toUpperCase()}</strong></div>`;
         }
 
         async function loadData() {
             const tbody = document.getElementById('table-body');
-            tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; padding:50px; color:#666;'>POLLING DATA...</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; padding:50px;'>SYNCING DATA...</td></tr>";
 
             try {
                 // 1. Fetch Vehicle Checks
                 const vRes = await fetch(GOOGLE_SCRIPT_URL);
                 const vehicleData = await vRes.json();
 
-                // 2. Fetch Supabase Logs
+                // 2. Calculate Date Ranges
                 const now = new Date();
-                const day = now.getDay();
-                const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-                const monday = new Date(now.setDate(diff));
-                monday.setHours(0,0,0,0);
+                const day = now.getDay(); // 0 is Sun, 1 is Mon
+                const diffToMonday = day === 0 ? -6 : 1 - day;
+                
+                let startRange = new Date(now);
+                startRange.setDate(now.getDate() + diffToMonday);
+                startRange.setHours(0,0,0,0);
 
+                let endRange = new Date(); // Default for current week is 'now'
+
+                if (currentView === 'previous') {
+                    endRange = new Date(startRange); // End of last week is start of this week
+                    startRange.setDate(startRange.getDate() - 7); // Start of last week is 7 days prior
+                }
+
+                // 3. Fetch Supabase Logs
                 const { data: logs, error } = await _supabase
                     .from('fleet_logs')
                     .select('*')
-                    .gte('created_at', monday.toISOString())
+                    .gte('created_at', startRange.toISOString())
+                    .lt('created_at', endRange.toISOString())
                     .order('created_at', { ascending: true });
 
                 if (error) throw error;
@@ -144,20 +163,9 @@
                 logs.forEach(log => {
                     const nameKey = log.driver_name.toLowerCase().trim();
                     if (!report[nameKey]) {
-                        report[nameKey] = { 
-                            displayName: log.driver_name,
-                            totalMs: 0, 
-                            lastStart: null, 
-                            status: 'OFFLINE', 
-                            longShifts: 0, 
-                            nights: 0, 
-                            lastLoc: log.coordinates, 
-                            lastTime: '' 
-                        };
+                        report[nameKey] = { displayName: log.driver_name, totalMs: 0, lastStart: null, status: 'OFFLINE', longShifts: 0, nights: 0, lastLoc: log.coordinates, lastTime: '' };
                     }
-                    
                     const d = report[nameKey];
-
                     if (log.action_type === 'START') {
                         d.lastStart = new Date(log.created_at);
                         d.status = 'ACTIVE';
@@ -175,13 +183,9 @@
                 });
 
                 tbody.innerHTML = "";
-                const drivers = Object.keys(report);
-                
-                drivers.forEach(key => {
+                Object.keys(report).forEach(key => {
                     const d = report[key];
-                    
-                    // Match with Google Sheet data
-                    const vInfo = vehicleData[key] || { status: "⌛ NO CHECK", detail: "No check found for this driver today." };
+                    const vInfo = vehicleData[key] || { status: "⌛ NO CHECK", detail: "No data." };
                     const vColor = vInfo.status.includes("⚠️") ? "var(--red)" : (vInfo.status.includes("✅") ? "var(--active)" : "#777");
                     
                     if (d.status === 'ACTIVE') activeCount++;
@@ -202,19 +206,18 @@
                     `;
                 });
 
-                document.getElementById('stat-total').innerText = drivers.length;
+                document.getElementById('stat-total').innerText = Object.keys(report).length;
                 document.getElementById('stat-active').innerText = activeCount;
                 document.getElementById('stat-long').innerText = longCount;
                 document.getElementById('stat-nights').innerText = nightCount;
 
             } catch (err) {
-                console.error(err);
-                tbody.innerHTML = `<tr><td colspan='8' style='text-align:center; color:orange; padding:30px;'>SYNC ERROR: Check Console for details.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan='8' style='text-align:center; color:orange; padding:30px;'>SYNC ERROR</td></tr>`;
             }
         }
 
         window.onload = loadData;
-        setInterval(loadData, 60000); 
+        setInterval(() => { if(currentView === 'current') loadData(); }, 60000); 
     </script>
 </body>
 </html>
