@@ -6,172 +6,41 @@
     <title>FTS DATA CENTRE</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { 
-            --red: #E62411; 
-            --bg: #111111; 
-            --card: #1d1f20; 
-            --text: #f4f7f6; 
-            --border: #333; 
-            --active: #28a745; 
-            --payroll: #f39c12; 
-            --money: #2ecc71; 
-            --blue: #3498db; 
-        }
-        
-        body { 
-            font-family: 'Segoe UI', Tahoma, sans-serif; 
-            background: var(--bg); 
-            margin: 0; 
-            display: flex; 
-            height: 100vh; 
-            color: var(--text); 
-            overflow: hidden; 
-        }
+        :root { --red: #E62411; --bg: #111111; --card: #1d1f20; --text: #f4f7f6; --border: #333; --active: #28a745; --payroll: #f39c12; --money: #2ecc71; --blue: #3498db; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; color: var(--text); overflow: hidden; }
         
         /* SIDEBAR */
-        .sidebar { 
-            width: 320px; 
-            background: var(--card); 
-            border-right: 2px solid var(--border); 
-            display: flex; 
-            flex-direction: column; 
-            z-index: 10; 
-        }
-        .sidebar-header { 
-            padding: 25px; 
-            border-bottom: 1px solid var(--border); 
-            font-weight: 900; 
-            color: var(--red); 
-            text-transform: uppercase; 
-            font-size: 1.2rem; 
-            letter-spacing: 1px;
-        }
-        .sidebar-content { 
-            flex: 1; 
-            padding: 20px; 
-            font-size: 13px; 
-            color: #888; 
-            overflow-y: auto; 
-            line-height: 1.6;
-        }
-        .map-dock { 
-            height: 320px; 
-            border-top: 3px solid var(--red); 
-            background: #000; 
-            position: relative;
-        }
+        .sidebar { width: 320px; background: var(--card); border-right: 2px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
+        .sidebar-header { padding: 25px; border-bottom: 1px solid var(--border); font-weight: 900; color: var(--red); text-transform: uppercase; font-size: 1.2rem; letter-spacing: 1px; }
+        .sidebar-content { flex: 1; padding: 20px; font-size: 13px; color: #888; overflow-y: auto; line-height: 1.6; }
+        .map-dock { height: 320px; border-top: 3px solid var(--red); background: #000; position: relative; }
         #sidebar-map { width: 100%; height: 100%; border: none; display: none; }
         
         /* MAIN CONTENT */
-        .main-wrapper { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            overflow-y: auto; 
-            padding: 25px; 
-        }
-        .header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            background: var(--card); 
-            padding: 20px 30px; 
-            border-radius: 12px; 
-            border-bottom: 5px solid var(--red); 
-            margin-bottom: 25px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
+        .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 25px; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 20px 30px; border-radius: 12px; border-bottom: 5px solid var(--red); margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .logo { font-size: 26px; font-weight: 900; text-transform: uppercase; }
         .logo span { color: var(--red); }
         
         /* ACTION BAR */
         .action-bar { display: flex; gap: 10px; align-items: center; }
-        .view-toggle { 
-            background: #333; 
-            padding: 5px; 
-            border-radius: 8px; 
-            display: flex; 
-            gap: 5px; 
-            margin-right: 10px; 
-        }
-        .toggle-btn { 
-            padding: 8px 15px; 
-            border-radius: 5px; 
-            border: none; 
-            cursor: pointer; 
-            font-size: 10px; 
-            font-weight: 800; 
-            text-transform: uppercase; 
-            color: #777; 
-            background: transparent; 
-            transition: 0.3s; 
-        }
+        .view-toggle { background: #333; padding: 5px; border-radius: 8px; display: flex; gap: 5px; margin-right: 10px; }
+        .toggle-btn { padding: 8px 15px; border-radius: 5px; border: none; cursor: pointer; font-size: 10px; font-weight: 800; text-transform: uppercase; color: #777; background: transparent; }
         .toggle-btn.active { background: var(--red); color: white; }
+        .btn { background: var(--red); color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 10px; text-decoration: none; display: inline-flex; align-items: center; }
         
-        .btn { 
-            background: var(--red); 
-            color: white; 
-            border: none; 
-            padding: 10px 15px; 
-            border-radius: 6px; 
-            font-weight: 700; 
-            cursor: pointer; 
-            text-transform: uppercase; 
-            font-size: 10px; 
-            text-decoration: none; 
-            display: inline-flex; 
-            align-items: center; 
-            justify-content: center;
-        }
-        .btn:hover { opacity: 0.8; transform: scale(1.02); }
+        /* UPDATED: CLEAN DRIVER NAME (No dotted line) */
+        .driver-name { cursor: help; position: relative; }
         
-        /* STATS GRID */
-        .stats-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
-            gap: 12px; 
-            margin-bottom: 25px; 
-        }
-        .stat-card { 
-            background: var(--card); 
-            padding: 15px; 
-            border-radius: 10px; 
-            border-left: 5px solid #333; 
-        }
-        .stat-card h3 { 
-            margin: 0; 
-            font-size: 9px; 
-            color: #888; 
-            text-transform: uppercase; 
-            letter-spacing: 1px;
-        }
-        .stat-card p { 
-            margin: 8px 0 0; 
-            font-size: 22px; 
-            font-weight: 800; 
-        }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 25px; }
+        .stat-card { background: var(--card); padding: 15px; border-radius: 10px; border-left: 5px solid #333; }
+        .stat-card h3 { margin: 0; font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-card p { margin: 8px 0 0; font-size: 22px; font-weight: 800; }
         
-        /* TABLE */
-        .table-container { 
-            background: var(--card); 
-            border-radius: 12px; 
-            overflow-x: auto; 
-            border: 1px solid var(--border); 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
-        }
+        .table-container { background: var(--card); border-radius: 12px; overflow-x: auto; border: 1px solid var(--border); box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
         table { width: 100%; border-collapse: collapse; min-width: 1100px; }
-        th { 
-            padding: 18px; 
-            font-size: 11px; 
-            text-transform: uppercase; 
-            color: #777; 
-            border-bottom: 2px solid var(--border); 
-            text-align: left; 
-            background: rgba(255,255,255,0.02);
-        }
+        th { padding: 18px; font-size: 11px; text-transform: uppercase; color: #777; border-bottom: 2px solid var(--border); text-align: left; background: rgba(255,255,255,0.02); }
         td { padding: 16px 18px; border-bottom: 1px solid var(--border); font-size: 14px; }
-        tr:hover td { background: rgba(255,255,255,0.01); }
-
         .badge { padding: 5px 10px; border-radius: 4px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
         .badge-active { background: var(--active); color: white; }
         .map-link { color: #3498db; cursor: pointer; font-weight: 800; border-bottom: 1px dashed #3498db; }
@@ -185,12 +54,10 @@
         <div class="sidebar-content" id="sidebar-info">
             <p><strong>System:</strong> Operational</p>
             <p id="view-indicator">Showing: <b>Current Week</b></p>
-            <p style="margin-top:10px; font-size: 11px; opacity: 0.6;">Rate: £22.04/hr (Inc. NI/Pen/Tax)</p>
-            <p style="margin-top:10px; color:var(--payroll)">Tip: Hover over status for check details.</p>
+            <p style="margin-top:10px; font-size: 11px; opacity: 0.6;">Rate: £22.04/hr</p>
+            <p style="margin-top:10px; color:var(--payroll)">Tip: Hover over Driver for Weekly Log.</p>
         </div>
-        <div class="map-dock">
-            <iframe id="sidebar-map" referrerpolicy="no-referrer-when-downgrade"></iframe>
-        </div>
+        <div class="map-dock"><iframe id="sidebar-map" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
     </aside>
 
     <div class="main-wrapper">
@@ -219,16 +86,7 @@
         <div class="table-container">
             <table>
                 <thead>
-                    <tr>
-                        <th>Driver</th>
-                        <th>Status</th>
-                        <th>Weekly Hours</th>
-                        <th>15hr Usage</th>
-                        <th>Nights</th>
-                        <th>Last Action</th>
-                        <th>Vehicle Check</th>
-                        <th>Location</th>
-                    </tr>
+                    <tr><th>Driver</th><th>Status</th><th>Weekly Hours</th><th>15hr Usage</th><th>Nights</th><th>Last Action</th><th>Vehicle Check</th><th>Location</th></tr>
                 </thead>
                 <tbody id="table-body"></tbody>
             </table>
@@ -244,30 +102,17 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let currentView = 'current';
 
-        function setView(view) {
-            currentView = view;
-            document.getElementById('btn-curr').classList.toggle('active', view === 'current');
-            document.getElementById('btn-prev').classList.toggle('active', view === 'previous');
-            document.getElementById('view-indicator').innerHTML = `Showing: <b>${view === 'current' ? 'Current Week' : 'Previous Week'}</b>`;
-            loadData();
-        }
+        function setView(v) { currentView = v; document.getElementById('btn-curr').classList.toggle('active', v==='current'); document.getElementById('btn-prev').classList.toggle('active', v==='previous'); loadData(); }
 
         function updateDock(coords, name) {
-            const mapFrame = document.getElementById('sidebar-map');
-            mapFrame.style.display = "block";
-            mapFrame.src = `https://www.google.com/maps?q=${coords}&t=k&z=15&output=embed`;
-            document.getElementById('sidebar-info').innerHTML = `
-                <div style="background:var(--red);padding:15px;border-radius:8px;color:white;">
-                    <small>SATELLITE LOCK:</small><br>
-                    <strong>${name.toUpperCase()}</strong><br>
-                    <a href="https://www.google.com/maps?q=${coords}" target="_blank" style="color:white; font-size:10px; text-decoration:underline;">Open Maps App</a>
-                </div>
-            `;
+            const f = document.getElementById('sidebar-map'); f.style.display="block";
+            f.src = `https://www.google.com/maps?q=${coords}&t=k&z=15&output=embed`;
+            document.getElementById('sidebar-info').innerHTML = `<div style="background:var(--red);padding:15px;border-radius:8px;color:white;">LOCK: <strong>${name.toUpperCase()}</strong></div>`;
         }
 
         async function loadData() {
             const tbody = document.getElementById('table-body');
-            tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; padding:50px; color:#666;'>POLLING DATA...</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; padding:50px;'>SYNCING...</td></tr>";
 
             try {
                 const vRes = await fetch(GOOGLE_SCRIPT_URL);
@@ -275,113 +120,70 @@
 
                 const now = new Date();
                 const day = now.getDay();
-                const diffToMonday = day === 0 ? -6 : 1 - day;
-                let startRange = new Date(now);
-                startRange.setDate(now.getDate() + diffToMonday);
-                startRange.setHours(0,0,0,0);
-                let endRange = new Date();
+                const diff = day === 0 ? -6 : 1 - day;
+                let start = new Date(now.setDate(now.getDate() + diff));
+                start.setHours(0,0,0,0);
+                let end = new Date();
 
-                if (currentView === 'previous') {
-                    endRange = new Date(startRange);
-                    startRange.setDate(startRange.getDate() - 7);
-                }
+                if (currentView === 'previous') { end = new Date(start); start.setDate(start.getDate() - 7); }
 
-                const { data: logs, error } = await _supabase
-                    .from('fleet_logs')
-                    .select('*')
-                    .gte('created_at', startRange.toISOString())
-                    .lt('created_at', endRange.toISOString())
-                    .order('created_at', { ascending: true });
-
-                if (error) throw error;
+                const { data: logs } = await _supabase.from('fleet_logs').select('*').gte('created_at', start.toISOString()).lt('created_at', end.toISOString()).order('created_at', { ascending: true });
 
                 const report = {};
-                let activeCount = 0, nightCount = 0, grandTotalMs = 0, totalAlerts = 0, defectCount = 0;
+                let activeCount = 0, nightCount = 0, grandTotalMs = 0, alerts = 0, defects = 0;
 
                 logs.forEach(log => {
-                    const nameKey = log.driver_name.toLowerCase().trim();
-                    if (!report[nameKey]) {
-                        report[nameKey] = { 
-                            displayName: log.driver_name,
-                            totalMs: 0, 
-                            lastStart: null, 
-                            status: 'OFFLINE', 
-                            longShifts: 0, 
-                            nights: 0, 
-                            lastLoc: log.coordinates, 
-                            lastTime: '' 
-                        };
-                    }
+                    const key = log.driver_name.toLowerCase().trim();
+                    if (!report[key]) report[key] = { name: log.driver_name, totalMs: 0, lastStart: null, shifts: [], status: 'OFFLINE', longShifts: 0, nights: 0, lastLoc: log.coordinates, lastTime: '' };
                     
-                    const d = report[nameKey];
+                    const d = report[key];
+                    const timeStr = new Date(log.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    const dateStr = new Date(log.created_at).toLocaleDateString([], {weekday: 'short'});
 
-                    if (log.action_type === 'START') {
-                        d.lastStart = new Date(log.created_at);
-                        d.status = 'ACTIVE';
-                    } else if (log.action_type === 'END' && d.lastStart) {
+                    if (log.action_type === 'START') { d.lastStart = new Date(log.created_at); d.status = 'ACTIVE'; }
+                    else if (log.action_type === 'END' && d.lastStart) {
                         const shiftMs = new Date(log.created_at) - d.lastStart;
-                        d.totalMs += shiftMs;
-                        grandTotalMs += shiftMs;
-                        if (shiftMs > (15 * 60 * 60 * 1000)) {
-                            d.longShifts++;
-                            totalAlerts++;
-                        }
-                        d.lastStart = null;
-                        d.status = 'OFFLINE';
-                    } else if (log.action_type === 'NIGHT OUT') {
-                        d.nights++;
+                        d.totalMs += shiftMs; grandTotalMs += shiftMs;
+                        if (shiftMs > (15 * 60 * 60 * 1000)) { d.longShifts++; alerts++; }
+                        d.shifts.push(`${dateStr}: ${d.lastStart.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} - ${timeStr} (${(shiftMs/3600000).toFixed(1)}h)`);
+                        d.lastStart = null; d.status = 'OFFLINE';
                     }
+                    else if (log.action_type === 'NIGHT OUT') { d.nights++; nightCount++; }
                     d.lastLoc = log.coordinates;
-                    d.lastTime = new Date(log.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    d.lastTime = timeStr;
                 });
 
                 tbody.innerHTML = "";
-                const driverKeys = Object.keys(report).sort();
-                
-                driverKeys.forEach(key => {
+                Object.keys(report).sort().forEach(key => {
                     const d = report[key];
-                    const vInfo = vehicleData[key] || { status: "⌛ NO CHECK", detail: "No data." };
-                    const vColor = vInfo.status.includes("⚠️") ? "var(--red)" : (vInfo.status.includes("✅") ? "var(--active)" : "#777");
-                    
-                    if (vInfo.status.includes("⚠️")) defectCount++;
+                    const v = vehicleData[key] || { status: "⌛ NO CHECK", detail: "No data." };
+                    const vColor = v.status.includes("⚠️") ? "var(--red)" : (v.status.includes("✅") ? "var(--active)" : "#777");
+                    if (v.status.includes("⚠️")) defects++;
                     if (d.status === 'ACTIVE') activeCount++;
-                    nightCount += d.nights;
 
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><strong>${d.displayName.toUpperCase()}</strong></td>
-                            <td><span class="badge ${d.status === 'ACTIVE' ? 'badge-active' : ''}" style="background:${d.status === 'ACTIVE' ? '' : '#444'}">${d.status}</span></td>
-                            <td style="font-weight:700;">${(d.totalMs / (1000 * 60 * 60)).toFixed(2)}h</td>
-                            <td style="color:${d.longShifts >= 3 ? 'var(--red)' : 'inherit'}; font-weight:bold;">${d.longShifts}/3</td>
-                            <td>${d.nights}</td>
-                            <td style="opacity:0.6">${d.lastTime}</td>
-                            <td class="check-cell" style="color:${vColor}" title="${vInfo.detail}">${vInfo.status}</td>
-                            <td><span class="map-link" onclick="updateDock('${d.lastLoc}', '${d.displayName}')">📍 View GPS</span></td>
-                        </tr>
-                    `;
+                    tbody.innerHTML += `<tr>
+                        <td><span class="driver-name" title="${d.shifts.join('\n') || 'No completed shifts'}"><strong>${d.name.toUpperCase()}</strong></span></td>
+                        <td><span class="badge ${d.status === 'ACTIVE' ? 'badge-active' : ''}" style="background:${d.status === 'ACTIVE' ? '' : '#444'}">${d.status}</span></td>
+                        <td style="font-weight:700;">${(d.totalMs/3600000).toFixed(2)}h</td>
+                        <td style="color:${d.longShifts >= 3 ? 'var(--red)' : 'inherit'}; font-weight:bold;">${d.longShifts}/3</td>
+                        <td>${d.nights}</td>
+                        <td style="opacity:0.6">${d.lastTime}</td>
+                        <td class="check-cell" style="color:${vColor}" title="${v.detail}">${v.status}</td>
+                        <td><span class="map-link" onclick="updateDock('${d.lastLoc}', '${d.name}')">📍 VIEW GPS</span></td>
+                    </tr>`;
                 });
 
-                const totalDrivers = driverKeys.length || 1;
-                const healthPct = Math.round(((totalDrivers - defectCount) / totalDrivers) * 100);
-                const healthColor = healthPct === 100 ? 'var(--active)' : (healthPct > 80 ? 'var(--payroll)' : 'var(--red)');
-
-                document.getElementById('stat-total').innerText = driverKeys.length;
+                const totalDrivers = Object.keys(report).length || 1;
+                const healthPct = Math.round(((totalDrivers - defects) / totalDrivers) * 100);
+                document.getElementById('stat-total').innerText = Object.keys(report).length;
                 document.getElementById('stat-active').innerText = activeCount;
-                document.getElementById('stat-long').innerText = totalAlerts;
+                document.getElementById('stat-long').innerText = alerts;
                 document.getElementById('stat-nights').innerText = nightCount;
                 document.getElementById('stat-health').innerText = `${healthPct}%`;
-                document.getElementById('stat-health').style.color = healthColor;
-                document.getElementById('card-health').style.borderLeftColor = healthColor;
-                
-                const totalCost = (grandTotalMs / (1000 * 60 * 60)) * HOURLY_RATE;
-                document.getElementById('stat-wages').innerText = `£${totalCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                document.getElementById('stat-wages').innerText = `£${((grandTotalMs/3600000)*HOURLY_RATE).toLocaleString(undefined,{minimumFractionDigits:2})}`;
 
-            } catch (err) {
-                console.error(err);
-                tbody.innerHTML = `<tr><td colspan='8' style='text-align:center; color:orange; padding:30px;'>SYNC ERROR</td></tr>`;
-            }
+            } catch (err) { tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; color:orange;'>SYNC ERROR</td></tr>"; }
         }
-
         window.onload = loadData;
         setInterval(() => { if(currentView === 'current') loadData(); }, 60000); 
     </script>
