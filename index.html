@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FTS DATA CENTRE</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
     <style>
         :root { --red: #E62411; --bg: #111111; --card: #1d1f20; --text: #f4f7f6; --border: #333; --active: #28a745; --payroll: #f39c12; --money: #2ecc71; --blue: #3498db; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; color: var(--text); overflow: hidden; }
@@ -25,9 +28,17 @@
         .toggle-btn { padding: 8px 15px; border-radius: 5px; border: none; cursor: pointer; font-size: 10px; font-weight: 800; text-transform: uppercase; color: #777; background: transparent; }
         .toggle-btn.active { background: var(--red); color: white; }
         .btn { background: var(--red); color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 10px; text-decoration: none; display: inline-flex; align-items: center; }
+        .btn-alt { background: #444; }
+        .btn-download { background: var(--blue); }
+
+        #manual-modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); }
+        .modal-content { background: var(--card); margin: 8% auto; padding: 30px; border-radius: 12px; width: 400px; border: 1px solid var(--red); }
+        .modal-content h2 { margin-top: 0; color: var(--red); font-size: 18px; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 11px; color: #888; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; background: #111; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
         
         .driver-name { cursor: help; position: relative; }
-        
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 25px; }
         .stat-card { background: var(--card); padding: 15px; border-radius: 10px; border-left: 5px solid #333; }
         .stat-card h3 { margin: 0; font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
@@ -45,12 +56,41 @@
 </head>
 <body>
 
+    <div id="manual-modal">
+        <div class="modal-content">
+            <h2>Manual Log Entry</h2>
+            <div class="form-group">
+                <label>Select Driver</label>
+                <select id="manual-driver-select" onchange="toggleNewDriverInput()"></select>
+            </div>
+            <div id="new-driver-container" class="form-group" style="display:none;">
+                <label>New Driver Name</label>
+                <input type="text" id="manual-driver-new" placeholder="Enter Full Name">
+            </div>
+            <div class="form-group">
+                <label>Action Type</label>
+                <select id="manual-action">
+                    <option value="START">START (Clock In)</option>
+                    <option value="END">END (Clock Out)</option>
+                    <option value="NIGHT OUT">NIGHT OUT</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Date & Time</label>
+                <input type="datetime-local" id="manual-time">
+            </div>
+            <div style="display:flex; gap:10px; margin-top:25px;">
+                <button class="btn" style="flex:1; padding: 15px;" onclick="submitManualEntry()">Submit Entry</button>
+                <button class="btn btn-alt" style="padding: 15px;" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <aside class="sidebar">
         <div class="sidebar-header">FTS DATA</div>
         <div class="sidebar-content" id="sidebar-info">
             <p><strong>System:</strong> Operational</p>
             <p id="view-indicator">Showing: <b>Current Week</b></p>
-            <p style="margin-top:10px; font-size: 11px; opacity: 0.6;">Rate: £22.04/hr</p>
             <p style="margin-top:10px; color:var(--payroll)">Tip: Hover over Driver for Weekly Log.</p>
         </div>
         <div class="map-dock"><iframe id="sidebar-map" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
@@ -64,9 +104,11 @@
                     <button class="toggle-btn active" id="btn-curr" onclick="setView('current')">Current</button>
                     <button class="toggle-btn" id="btn-prev" onclick="setView('previous')">Last Week</button>
                 </div>
-                <a href="https://docs.google.com/spreadsheets/d/1LJpZqCfRlNNNr494sCB5Ax1hFwFh4e7LzAIa0sTHoks/edit?usp=sharing" target="_blank" class="btn">⛽ Fuel Logs</a>
-                <a href="https://docs.google.com/spreadsheets/d/1nZvQOplnru5hUCy4VRmm7bVHOwuJyzvV4CD3DyDGmO0/edit?usp=sharing" target="_blank" class="btn">🚛 Trailer Checks</a>
-                <button class="btn" onclick="loadData()">🔄 Refresh Hub</button>
+                <button class="btn btn-download" onclick="downloadLastWeekPDF()">📄 Export Last Week</button>
+                <a href="https://docs.google.com/spreadsheets/d/1LJpZqCfRlNNNr494sCB5Ax1hFwFh4e7LzAIa0sTHoks/edit?usp=sharing" target="_blank" class="btn">⛽ Fuel</a>
+                <a href="https://docs.google.com/spreadsheets/d/1nZvQOplnru5hUCy4VRmm7bVHOwuJyzvV4CD3DyDGmO0/edit?usp=sharing" target="_blank" class="btn">🚛 Trailer</a>
+                <button class="btn btn-alt" onclick="openModal()">➕ Manual</button>
+                <button class="btn" onclick="loadData()">🔄 Refresh</button>
             </div>
         </div>
 
@@ -75,7 +117,7 @@
             <div class="stat-card" style="border-left-color: var(--active)"><h3>On Duty</h3><p id="stat-active" style="color:var(--active)">0</p></div>
             <div class="stat-card" style="border-left-color: var(--red)"><h3>15hr Alerts</h3><p id="stat-long" style="color:var(--red)">0</p></div>
             <div class="stat-card" style="border-left-color: var(--payroll)"><h3>Nights Out</h3><p id="stat-nights" style="color:var(--payroll)">0</p></div>
-            <div class="stat-card" style="border-left-color: var(--blue)" id="card-health"><h3>Fleet Health</h3><p id="stat-health" style="color:var(--blue)">100%</p></div>
+            <div class="stat-card" style="border-left-color: var(--blue)"><h3>Fleet Health</h3><p id="stat-health" style="color:var(--blue)">100%</p></div>
             <div class="stat-card" style="border-left-color: var(--money)"><h3>Wage Bill</h3><p id="stat-wages" style="color:var(--money)">£0.00</p></div>
         </div>
 
@@ -97,111 +139,142 @@
 
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let currentView = 'current';
+        let knownDrivers = [];
+        let lastWeekReportData = []; // To store data for PDF
 
-        function setView(v) { currentView = v; document.getElementById('btn-curr').classList.toggle('active', v==='current'); document.getElementById('btn-prev').classList.toggle('active', v==='previous'); loadData(); }
+        // PDF GENERATION
+        async function downloadLastWeekPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+            
+            // Re-fetch last week specifically to ensure accuracy
+            const now = new Date();
+            const day = now.getDay();
+            const diff = day === 0 ? -6 : 1 - day;
+            let start = new Date(now.setDate(now.getDate() + diff));
+            start.setHours(0,0,0,0);
+            let end = new Date(start); 
+            start.setDate(start.getDate() - 7);
 
-        function updateDock(coords, name) {
-            const f = document.getElementById('sidebar-map'); f.style.display="block";
-            f.src = `https://www.google.com/maps?q=${coords}&t=k&z=15&output=embed`;
-            document.getElementById('sidebar-info').innerHTML = `<div style="background:var(--red);padding:15px;border-radius:8px;color:white;">LOCK: <strong>${name.toUpperCase()}</strong></div>`;
+            const { data: logs } = await _supabase.from('fleet_logs').select('*').gte('created_at', start.toISOString()).lt('created_at', end.toISOString()).order('created_at', { ascending: true });
+
+            const report = {};
+            logs.forEach(log => {
+                const key = log.driver_name.toLowerCase().trim();
+                if (!report[key]) report[key] = { name: log.driver_name, totalMs: 0, lastStart: null, longShifts: 0, nights: 0 };
+                const d = report[key];
+                if (log.action_type === 'START') d.lastStart = new Date(log.created_at);
+                else if (log.action_type === 'END' && d.lastStart) {
+                    const shiftMs = new Date(log.created_at) - d.lastStart;
+                    d.totalMs += shiftMs;
+                    if (shiftMs > (15 * 60 * 60 * 1000)) d.longShifts++;
+                    d.lastStart = null;
+                }
+                else if (log.action_type === 'NIGHT OUT') d.nights++;
+            });
+
+            const rows = Object.values(report).map(d => [
+                d.name.toUpperCase(),
+                (d.totalMs/3600000).toFixed(2) + 'h',
+                d.longShifts + '/3',
+                d.nights,
+                '£' + ((d.totalMs/3600000)*HOURLY_RATE).toLocaleString(undefined,{minimumFractionDigits:2})
+            ]);
+
+            doc.setFontSize(18);
+            doc.text("FTS DATA CENTRE: WEEKLY PAYROLL REPORT", 14, 20);
+            doc.setFontSize(10);
+            doc.text(`Period: ${start.toDateString()} to ${end.toDateString()}`, 14, 28);
+
+            doc.autoTable({
+                startY: 35,
+                head: [['DRIVER', 'TOTAL HOURS', '15hr USAGE', 'NIGHTS OUT', 'EST. WAGES']],
+                body: rows,
+                theme: 'striped',
+                headStyles: { fillColor: [230, 36, 17] }
+            });
+
+            doc.save(`FTS_Payroll_${start.toLocaleDateString()}.pdf`);
         }
+
+        function openModal() { 
+            const select = document.getElementById('manual-driver-select');
+            select.innerHTML = '<option value="">-- Choose Driver --</option>';
+            knownDrivers.forEach(d => { select.innerHTML += `<option value="${d}">${d.toUpperCase()}</option>`; });
+            select.innerHTML += '<option value="NEW_DRIVER">-- Add New Driver... --</option>';
+            document.getElementById('manual-modal').style.display = 'block'; 
+        }
+        function closeModal() { document.getElementById('manual-modal').style.display = 'none'; }
+        function toggleNewDriverInput() { const select = document.getElementById('manual-driver-select'); const newContainer = document.getElementById('new-driver-container'); newContainer.style.display = (select.value === 'NEW_DRIVER') ? 'block' : 'none'; }
+
+        async function submitManualEntry() {
+            const select = document.getElementById('manual-driver-select');
+            let name = select.value === 'NEW_DRIVER' ? document.getElementById('manual-driver-new').value : select.value;
+            const action = document.getElementById('manual-action').value;
+            const time = document.getElementById('manual-time').value;
+            if(!name || !time) return alert("Fill in Name and Time");
+            const { error } = await _supabase.from('fleet_logs').insert([{ driver_name: name.trim(), action_type: action, created_at: new Date(time).toISOString(), coordinates: "53.1424,-1.1396" }]);
+            if(error) alert(error.message); else { closeModal(); loadData(); }
+        }
+
+        function setView(v) { currentView = v; loadData(); }
+        function updateDock(coords, name) { const f = document.getElementById('sidebar-map'); f.style.display="block"; f.src = `https://www.google.com/maps?q=${coords}&t=k&z=15&output=embed`; }
 
         async function loadData() {
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; padding:50px;'>SYNCING...</td></tr>";
-
             try {
                 const vRes = await fetch(GOOGLE_SCRIPT_URL);
                 const vehicleData = await vRes.json();
-
                 const now = new Date();
                 const day = now.getDay();
                 const diff = day === 0 ? -6 : 1 - day;
                 let start = new Date(now.setDate(now.getDate() + diff));
                 start.setHours(0,0,0,0);
                 let end = new Date();
-
                 if (currentView === 'previous') { end = new Date(start); start.setDate(start.getDate() - 7); }
-
                 const { data: logs } = await _supabase.from('fleet_logs').select('*').gte('created_at', start.toISOString()).lt('created_at', end.toISOString()).order('created_at', { ascending: true });
-
+                
                 const report = {};
                 let activeCount = 0, nightCount = 0, grandTotalMs = 0, alerts = 0, defects = 0;
-
+                let driverSet = new Set();
+                
                 logs.forEach(log => {
                     const key = log.driver_name.toLowerCase().trim();
+                    driverSet.add(log.driver_name);
                     if (!report[key]) report[key] = { name: log.driver_name, totalMs: 0, lastStart: null, shifts: [], status: 'OFFLINE', longShifts: 0, nights: 0, nightDates: new Set(), lastLoc: log.coordinates, lastTime: '' };
-                    
                     const d = report[key];
                     const dateObj = new Date(log.created_at);
-                    const timeStr = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    const dateStr = dateObj.toLocaleDateString([], {weekday: 'short'});
-                    const fullDate = dateObj.toDateString(); // For precise cross-referencing
-
-                    if (log.action_type === 'START') { 
-                        d.lastStart = new Date(log.created_at); 
-                        d.status = 'ACTIVE'; 
-                    }
+                    if (log.action_type === 'START') { d.lastStart = new Date(log.created_at); d.status = 'ACTIVE'; }
                     else if (log.action_type === 'END' && d.lastStart) {
                         const shiftMs = new Date(log.created_at) - d.lastStart;
                         d.totalMs += shiftMs; grandTotalMs += shiftMs;
                         if (shiftMs > (15 * 60 * 60 * 1000)) { d.longShifts++; alerts++; }
-                        
-                        // Store shift with a placeholder for the Night Out marker
-                        d.shifts.push({
-                            date: dateStr,
-                            fullDate: d.lastStart.toDateString(),
-                            text: `${dateStr}: ${d.lastStart.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} - ${timeStr} (${(shiftMs/3600000).toFixed(1)}h)`
-                        });
-                        
-                        d.lastStart = null; 
-                        d.status = 'OFFLINE';
+                        d.shifts.push({ date: dateObj.toDateString(), text: `${dateObj.toLocaleDateString([],{weekday:'short'})}: ${d.lastStart.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} - ${dateObj.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} (${(shiftMs/3600000).toFixed(1)}h)` });
+                        d.lastStart = null; d.status = 'OFFLINE';
                     }
-                    else if (log.action_type === 'NIGHT OUT') { 
-                        d.nights++; 
-                        nightCount++; 
-                        d.nightDates.add(fullDate); 
-                    }
-                    d.lastLoc = log.coordinates;
-                    d.lastTime = timeStr;
+                    else if (log.action_type === 'NIGHT OUT') { d.nights++; nightCount++; d.nightDates.add(dateObj.toDateString()); }
+                    d.lastLoc = log.coordinates; d.lastTime = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 });
 
+                knownDrivers = Array.from(driverSet).sort();
                 tbody.innerHTML = "";
                 Object.keys(report).sort().forEach(key => {
                     const d = report[key];
                     const v = vehicleData[key] || { status: "⌛ NO CHECK", detail: "No data." };
-                    const vColor = v.status.includes("⚠️") ? "var(--red)" : (v.status.includes("✅") ? "var(--active)" : "#777");
                     if (v.status.includes("⚠️")) defects++;
                     if (d.status === 'ACTIVE') activeCount++;
-
-                    // Build the hover tooltip text with (N) markers
-                    const tooltipText = d.shifts.map(s => {
-                        const marker = d.nightDates.has(s.fullDate) ? " (N)" : "";
-                        return s.text + marker;
-                    }).join('\n');
-
-                    tbody.innerHTML += `<tr>
-                        <td><span class="driver-name" title="${tooltipText || 'No completed shifts'}"><strong>${d.name.toUpperCase()}</strong></span></td>
-                        <td><span class="badge ${d.status === 'ACTIVE' ? 'badge-active' : ''}" style="background:${d.status === 'ACTIVE' ? '' : '#444'}">${d.status}</span></td>
-                        <td style="font-weight:700;">${(d.totalMs/3600000).toFixed(2)}h</td>
-                        <td style="color:${d.longShifts >= 3 ? 'var(--red)' : 'inherit'}; font-weight:bold;">${d.longShifts}/3</td>
-                        <td>${d.nights}</td>
-                        <td style="opacity:0.6">${d.lastTime}</td>
-                        <td class="check-cell" style="color:${vColor}" title="${v.detail}">${v.status}</td>
-                        <td><span class="map-link" onclick="updateDock('${d.lastLoc}', '${d.name}')">📍 VIEW GPS</span></td>
-                    </tr>`;
+                    const tooltipText = d.shifts.map(s => s.text + (d.nightDates.has(s.date) ? " (N)" : "")).join('\n');
+                    tbody.innerHTML += `<tr><td><span class="driver-name" title="${tooltipText}"><strong>${d.name.toUpperCase()}</strong></span></td><td><span class="badge ${d.status === 'ACTIVE' ? 'badge-active' : ''}">${d.status}</span></td><td>${(d.totalMs/3600000).toFixed(2)}h</td><td>${d.longShifts}/3</td><td>${d.nights}</td><td>${d.lastTime}</td><td class="check-cell" style="color:${v.status.includes("⚠️") ? 'var(--red)' : (v.status.includes("✅") ? 'var(--active)' : '#777')}" title="${v.detail}">${v.status}</td><td><span class="map-link" onclick="updateDock('${d.lastLoc}', '${d.name}')">📍 GPS</span></td></tr>`;
                 });
 
-                const totalDrivers = Object.keys(report).length || 1;
-                const healthPct = Math.round(((totalDrivers - defects) / totalDrivers) * 100);
                 document.getElementById('stat-total').innerText = Object.keys(report).length;
                 document.getElementById('stat-active').innerText = activeCount;
                 document.getElementById('stat-long').innerText = alerts;
                 document.getElementById('stat-nights').innerText = nightCount;
-                document.getElementById('stat-health').innerText = `${healthPct}%`;
+                document.getElementById('stat-health').innerText = `${Math.round(((Object.keys(report).length - defects) / (Object.keys(report).length || 1)) * 100)}%`;
                 document.getElementById('stat-wages').innerText = `£${((grandTotalMs/3600000)*HOURLY_RATE).toLocaleString(undefined,{minimumFractionDigits:2})}`;
-
-            } catch (err) { tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; color:orange;'>SYNC ERROR</td></tr>"; }
+            } catch (err) { tbody.innerHTML = "<tr><td colspan='8'>SYNC ERROR</td></tr>"; }
         }
         window.onload = loadData;
         setInterval(() => { if(currentView === 'current') loadData(); }, 60000); 
