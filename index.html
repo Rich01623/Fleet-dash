@@ -9,18 +9,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     
     <style>
-        /* UPDATED COLOR PALETTE */
         :root { 
-            --red: #E62411; 
-            --bg: #020617;      /* Tailwind Slate-950 (Main Workspace) */
-            --sidebar: #0f172a; /* Tailwind Slate-900 (Sidebar) */
-            --card: #1e293b;    /* Tailwind Slate-800 (Cards/Widgets) */
-            --text: #f8fafc;    /* Brighter Slate text */
-            --border: #334155;  /* Slate-700 for subtle borders */
-            --active: #22c55e; 
-            --payroll: #f59e0b; 
-            --money: #10b981; 
-            --blue: #3b82f6; 
+            --red: #E62411; --bg: #020617; --sidebar: #0f172a; --card: #1e293b; 
+            --text: #f8fafc; --border: #334155; --active: #22c55e; 
+            --payroll: #f59e0b; --money: #10b981; --blue: #3b82f6; 
         }
 
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; color: var(--text); overflow: hidden; }
@@ -33,52 +25,61 @@
         #sidebar-map { width: 100%; height: 100%; border: none; display: none; }
         
         /* MAIN CONTENT */
-        .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 25px; }
+        .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 25px; position: relative; }
         .header { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 20px 30px; border-radius: 12px; border-bottom: 4px solid var(--red); margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         .logo { font-size: 26px; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; }
         .logo span { color: var(--red); }
         
         .action-bar { display: flex; gap: 10px; align-items: center; }
-        .view-toggle { background: var(--sidebar); padding: 5px; border-radius: 8px; display: flex; gap: 5px; margin-right: 10px; border: 1px solid var(--border); }
-        .toggle-btn { padding: 8px 15px; border-radius: 5px; border: none; cursor: pointer; font-size: 10px; font-weight: 800; text-transform: uppercase; color: #64748b; background: transparent; transition: 0.2s; }
-        .toggle-btn.active { background: var(--red); color: white; }
-        
-        .btn { background: var(--red); color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 10px; text-decoration: none; display: inline-flex; align-items: center; transition: filter 0.2s; }
-        .btn:hover { filter: brightness(1.2); }
+        .btn { background: var(--red); color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 10px; text-decoration: none; display: inline-flex; align-items: center; }
         .btn-alt { background: var(--border); color: #cbd5e1; }
         .btn-download { background: var(--blue); }
 
-        /* MODAL */
-        #manual-modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.9); }
-        .modal-content { background: var(--card); margin: 8% auto; padding: 30px; border-radius: 12px; width: 400px; border: 1px solid var(--border); box-shadow: 0 0 50px rgba(0,0,0,0.5); }
-        .modal-content h2 { margin-top: 0; color: var(--red); font-size: 18px; text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
-        .form-group input, .form-group select { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: white; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
-        
-        /* CARDS & TABLES */
+        /* CUSTOM POPOVER BOX */
+        .popover {
+            display: none; position: absolute; background: #0f172a; border: 1px solid var(--red);
+            padding: 15px; border-radius: 8px; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            max-width: 300px; color: #e2e8f0; font-size: 12px; line-height: 1.6;
+        }
+        .popover-header { font-weight: 900; color: var(--red); margin-bottom: 8px; border-bottom: 1px solid #334155; padding-bottom: 5px; display: flex; justify-content: space-between; }
+        .close-pop { cursor: pointer; color: #64748b; font-size: 16px; font-weight: bold; }
+
+        /* STAT CARDS */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 25px; }
-        .stat-card { background: var(--card); padding: 15px; border-radius: 10px; border-left: 5px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2); }
-        .stat-card h3 { margin: 0; font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-card { background: var(--card); padding: 15px; border-radius: 10px; border-left: 5px solid var(--border); }
+        .stat-card h3 { margin: 0; font-size: 9px; color: #94a3b8; text-transform: uppercase; }
         .stat-card p { margin: 8px 0 0; font-size: 22px; font-weight: 800; }
         
-        .table-container { background: var(--card); border-radius: 12px; overflow-x: auto; border: 1px solid var(--border); box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
+        /* TABLE */
+        .table-container { background: var(--card); border-radius: 12px; overflow-x: auto; border: 1px solid var(--border); }
         table { width: 100%; border-collapse: collapse; min-width: 1100px; }
         th { padding: 18px; font-size: 11px; text-transform: uppercase; color: #94a3b8; border-bottom: 2px solid var(--border); text-align: left; background: rgba(0,0,0,0.1); }
-        td { padding: 16px 18px; border-bottom: 1px solid var(--border); font-size: 14px; color: #e2e8f0; }
+        td { padding: 16px 18px; border-bottom: 1px solid var(--border); font-size: 14px; }
         
-        .driver-name { cursor: help; color: var(--text); }
+        .driver-name { cursor: pointer; color: var(--blue); font-weight: 800; border-bottom: 1px dashed var(--blue); }
         .badge { padding: 5px 10px; border-radius: 4px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
         .badge-active { background: var(--active); color: white; }
-        .map-link { color: var(--blue); cursor: pointer; font-weight: 800; border-bottom: 1px dashed var(--blue); }
-        .check-cell { font-weight: bold; cursor: help; text-decoration: underline dotted; text-underline-offset: 4px; }
+        .map-link { color: var(--blue); cursor: pointer; font-weight: 800; font-size: 11px; }
+
+        /* MODAL */
+        #manual-modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.9); }
+        .modal-content { background: var(--card); margin: 8% auto; padding: 30px; border-radius: 12px; width: 400px; border: 1px solid var(--border); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: white; border-radius: 5px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
+    <div id="popover-box" class="popover">
+        <div class="popover-header"><span id="pop-name">DRIVER LOG</span> <span class="close-pop" onclick="hidePopover()">×</span></div>
+        <div id="pop-content" style="white-space: pre-wrap;"></div>
+        <div style="font-size: 9px; color: #64748b; margin-top: 10px; border-top: 1px solid #334155; padding-top: 5px;">Highlight text above to copy.</div>
+    </div>
+
     <div id="manual-modal">
         <div class="modal-content">
-            <h2>Manual Log Entry</h2>
+            <h2 style="color:var(--red); text-transform:uppercase; font-size:18px; margin-top:0; border-bottom:1px solid var(--border); padding-bottom:15px;">Manual Log Entry</h2>
             <div class="form-group">
                 <label>Select Driver</label>
                 <select id="manual-driver-select" onchange="toggleNewDriverInput()"></select>
@@ -111,7 +112,7 @@
         <div class="sidebar-content" id="sidebar-info">
             <p><strong>System:</strong> Operational</p>
             <p id="view-indicator">Showing: <b>Current Week</b></p>
-            <p style="margin-top:10px; color:var(--payroll)">Tip: Hover over Driver for Weekly Log.</p>
+            <p style="margin-top:10px; color:var(--payroll)">Rate: £22.04/hr</p>
         </div>
         <div class="map-dock"><iframe id="sidebar-map" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
     </aside>
@@ -120,10 +121,6 @@
         <div class="header">
             <div class="logo">FTS <span>DATA CENTRE</span></div>
             <div class="action-bar">
-                <div class="view-toggle">
-                    <button class="toggle-btn active" id="btn-curr" onclick="setView('current')">Current</button>
-                    <button class="toggle-btn" id="btn-prev" onclick="setView('previous')">Last Week</button>
-                </div>
                 <button class="btn btn-download" onclick="downloadLastWeekPDF()">📄 Export PDF</button>
                 <a href="https://docs.google.com/spreadsheets/d/1LJpZqCfRlNNNr494sCB5Ax1hFwFh4e7LzAIa0sTHoks/edit?usp=sharing" target="_blank" class="btn">⛽ Fuel</a>
                 <a href="https://docs.google.com/spreadsheets/d/1nZvQOplnru5hUCy4VRmm7bVHOwuJyzvV4CD3DyDGmO0/edit?usp=sharing" target="_blank" class="btn">🚛 Trailer</a>
@@ -135,16 +132,14 @@
         <div class="stats-grid">
             <div class="stat-card"><h3>Drivers</h3><p id="stat-total">0</p></div>
             <div class="stat-card" style="border-left-color: var(--active)"><h3>On Duty</h3><p id="stat-active" style="color:var(--active)">0</p></div>
-            <div class="stat-card" style="border-left-color: var(--red)"><h3>15hr Alerts</h3><p id="stat-long" style="color:var(--red)">0</p></div>
             <div class="stat-card" style="border-left-color: var(--payroll)"><h3>Nights Out</h3><p id="stat-nights" style="color:var(--payroll)">0</p></div>
-            <div class="stat-card" style="border-left-color: var(--blue)"><h3>Fleet Health</h3><p id="stat-health" style="color:var(--blue)">100%</p></div>
             <div class="stat-card" style="border-left-color: var(--money)"><h3>Wage Bill</h3><p id="stat-wages" style="color:var(--money)">£0.00</p></div>
         </div>
 
         <div class="table-container">
             <table>
                 <thead>
-                    <tr><th>Driver</th><th>Status</th><th>Weekly Hours</th><th>15hr Usage</th><th>Nights</th><th>Last Action</th><th>Vehicle Check</th><th>Location</th></tr>
+                    <tr><th>Driver (Click for Log)</th><th>Status</th><th>Weekly Hours</th><th>15hr Usage</th><th>Nights</th><th>Last Action</th><th>Check</th><th>GPS</th></tr>
                 </thead>
                 <tbody id="table-body"></tbody>
             </table>
@@ -158,47 +153,18 @@
         const HOURLY_RATE = 22.04;
 
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        let currentView = 'current';
         let knownDrivers = [];
 
-        async function downloadLastWeekPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'mm', 'a4');
-            const now = new Date();
-            const day = now.getDay();
-            const diff = day === 0 ? -6 : 1 - day;
-            let start = new Date(now.setDate(now.getDate() + diff));
-            start.setHours(0,0,0,0);
-            let end = new Date(start); 
-            start.setDate(start.getDate() - 7);
-
-            const { data: logs } = await _supabase.from('fleet_logs').select('*').gte('created_at', start.toISOString()).lt('created_at', end.toISOString()).order('created_at', { ascending: true });
-
-            const report = {};
-            logs.forEach(log => {
-                const key = log.driver_name.toLowerCase().trim();
-                if (!report[key]) report[key] = { name: log.driver_name, totalMs: 0, lastStart: null, longShifts: 0, nights: 0 };
-                const d = report[key];
-                if (log.action_type === 'START') d.lastStart = new Date(log.created_at);
-                else if (log.action_type === 'END' && d.lastStart) {
-                    const shiftMs = new Date(log.created_at) - d.lastStart;
-                    d.totalMs += shiftMs;
-                    if (shiftMs > (15 * 60 * 60 * 1000)) d.longShifts++;
-                    d.lastStart = null;
-                }
-                else if (log.action_type === 'NIGHT OUT') d.nights++;
-            });
-
-            const rows = Object.values(report).map(d => [d.name.toUpperCase(), (d.totalMs/3600000).toFixed(2) + 'h', d.longShifts + '/3', d.nights, '£' + ((d.totalMs/3600000)*HOURLY_RATE).toLocaleString(undefined,{minimumFractionDigits:2})]);
-
-            doc.setFontSize(18);
-            doc.text("FTS DATA CENTRE: WEEKLY PAYROLL REPORT", 14, 20);
-            doc.setFontSize(10);
-            doc.text(`Period: ${start.toDateString()} to ${end.toDateString()}`, 14, 28);
-            doc.autoTable({ startY: 35, head: [['DRIVER', 'TOTAL HOURS', '15hr USAGE', 'NIGHTS OUT', 'EST. WAGES']], body: rows, theme: 'striped', headStyles: { fillColor: [230, 36, 17] } });
-            doc.save(`FTS_Payroll_${start.toLocaleDateString()}.pdf`);
+        // UI ACTIONS
+        function showPopover(event, name, logs) {
+            const pop = document.getElementById('popover-box');
+            document.getElementById('pop-name').innerText = name.toUpperCase();
+            document.getElementById('pop-content').innerText = logs || "No completed shifts recorded.";
+            pop.style.display = 'block';
+            pop.style.left = (event.pageX + 10) + 'px';
+            pop.style.top = (event.pageY + 10) + 'px';
         }
-
+        function hidePopover() { document.getElementById('popover-box').style.display = 'none'; }
         function openModal() { 
             const select = document.getElementById('manual-driver-select');
             select.innerHTML = '<option value="">-- Choose Driver --</option>';
@@ -207,24 +173,45 @@
             document.getElementById('manual-modal').style.display = 'block'; 
         }
         function closeModal() { document.getElementById('manual-modal').style.display = 'none'; }
-        function toggleNewDriverInput() { const select = document.getElementById('manual-driver-select'); const newContainer = document.getElementById('new-driver-container'); newContainer.style.display = (select.value === 'NEW_DRIVER') ? 'block' : 'none'; }
+        function toggleNewDriverInput() { const select = document.getElementById('manual-driver-select'); document.getElementById('new-driver-container').style.display = (select.value === 'NEW_DRIVER') ? 'block' : 'none'; }
+        function updateDock(coords, name) { const f = document.getElementById('sidebar-map'); f.style.display="block"; f.src = `https://maps.google.com/maps?q=${coords}&t=k&z=15&output=embed`; document.getElementById('sidebar-info').innerHTML = `<div style="background:var(--red);padding:15px;border-radius:8px;color:white;">LOCK: <strong>${name.toUpperCase()}</strong></div>`; }
 
-        async function submitManualEntry() {
-            const select = document.getElementById('manual-driver-select');
-            let name = select.value === 'NEW_DRIVER' ? document.getElementById('manual-driver-new').value : select.value;
-            const action = document.getElementById('manual-action').value;
-            const time = document.getElementById('manual-time').value;
-            if(!name || !time) return alert("Fill in Name and Time");
-            const { error } = await _supabase.from('fleet_logs').insert([{ driver_name: name.trim(), action_type: action, created_at: new Date(time).toISOString(), coordinates: "53.1424,-1.1396" }]);
-            if(error) alert(error.message); else { closeModal(); loadData(); }
+        // PDF EXPORT
+        async function downloadLastWeekPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+            const now = new Date();
+            const day = now.getDay();
+            const diff = day === 0 ? -6 : 1 - day;
+            let start = new Date(now.setDate(now.getDate() + diff));
+            start.setHours(0,0,0,0);
+            let end = new Date(start); start.setDate(start.getDate() - 7);
+
+            const { data: logs } = await _supabase.from('fleet_logs').select('*').gte('created_at', start.toISOString()).lt('created_at', end.toISOString()).order('created_at', { ascending: true });
+
+            const report = {};
+            logs.forEach(log => {
+                const key = log.driver_name.toLowerCase().trim();
+                if (!report[key]) report[key] = { name: log.driver_name, totalMs: 0, lastStart: null, long: 0, nights: 0 };
+                if (log.action_type === 'START') report[key].lastStart = new Date(log.created_at);
+                else if (log.action_type === 'END' && report[key].lastStart) {
+                    const shiftMs = new Date(log.created_at) - report[key].lastStart;
+                    report[key].totalMs += shiftMs;
+                    if (shiftMs > 54000000) report[key].long++;
+                    report[key].lastStart = null;
+                } else if (log.action_type === 'NIGHT OUT') report[key].nights++;
+            });
+
+            const rows = Object.values(report).map(d => [d.name.toUpperCase(), (d.totalMs/3600000).toFixed(2) + 'h', d.long + '/3', d.nights, '£' + ((d.totalMs/3600000)*HOURLY_RATE).toLocaleString()]);
+            doc.text("FTS WEEKLY PAYROLL REPORT", 14, 20);
+            doc.autoTable({ startY: 30, head: [['DRIVER', 'HOURS', '15hr', 'NIGHTS', 'WAGES']], body: rows, headStyles: { fillColor: [230, 36, 17] } });
+            doc.save(`FTS_Payroll_${start.toLocaleDateString()}.pdf`);
         }
 
-        function setView(v) { currentView = v; loadData(); }
-        function updateDock(coords, name) { const f = document.getElementById('sidebar-map'); f.style.display="block"; f.src = `https://www.google.com/maps?q=${coords}&t=k&z=15&output=embed`; }
-
+        // MAIN DATA LOAD
         async function loadData() {
             const tbody = document.getElementById('table-body');
-            tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; padding:50px;'>SYNCING...</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; padding:40px;'>Syncing...</td></tr>";
             try {
                 const vRes = await fetch(GOOGLE_SCRIPT_URL);
                 const vehicleData = await vRes.json();
@@ -233,53 +220,68 @@
                 const diff = day === 0 ? -6 : 1 - day;
                 let start = new Date(now.setDate(now.getDate() + diff));
                 start.setHours(0,0,0,0);
-                let end = new Date();
-                if (currentView === 'previous') { end = new Date(start); start.setDate(start.getDate() - 7); }
-                const { data: logs } = await _supabase.from('fleet_logs').select('*').gte('created_at', start.toISOString()).lt('created_at', end.toISOString()).order('created_at', { ascending: true });
+
+                const { data: logs } = await _supabase.from('fleet_logs').select('*').gte('created_at', start.toISOString()).order('created_at', { ascending: true });
                 
                 const report = {};
-                let activeCount = 0, nightCount = 0, grandTotalMs = 0, alerts = 0, defects = 0;
+                let activeCount = 0, nights = 0, totalMs = 0;
                 let driverSet = new Set();
                 
                 logs.forEach(log => {
                     const key = log.driver_name.toLowerCase().trim();
                     driverSet.add(log.driver_name);
-                    if (!report[key]) report[key] = { name: log.driver_name, totalMs: 0, lastStart: null, shifts: [], status: 'OFFLINE', longShifts: 0, nights: 0, nightDates: new Set(), lastLoc: log.coordinates, lastTime: '' };
+                    if (!report[key]) report[key] = { name: log.driver_name, ms: 0, lastStart: null, shifts: [], status: 'OFFLINE', long: 0, nights: 0, lastTime: '', lastLoc: log.coordinates };
                     const d = report[key];
                     const dateObj = new Date(log.created_at);
-                    if (log.action_type === 'START') { d.lastStart = new Date(log.created_at); d.status = 'ACTIVE'; }
+                    if (log.action_type === 'START') { d.lastStart = dateObj; d.status = 'ACTIVE'; }
                     else if (log.action_type === 'END' && d.lastStart) {
-                        const shiftMs = new Date(log.created_at) - d.lastStart;
-                        d.totalMs += shiftMs; grandTotalMs += shiftMs;
-                        if (shiftMs > (15 * 60 * 60 * 1000)) { d.longShifts++; alerts++; }
-                        d.shifts.push({ date: dateObj.toDateString(), text: `${dateObj.toLocaleDateString([],{weekday:'short'})}: ${d.lastStart.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} - ${dateObj.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} (${(shiftMs/3600000).toFixed(1)}h)` });
+                        const shiftMs = dateObj - d.lastStart;
+                        d.ms += shiftMs; totalMs += shiftMs;
+                        if (shiftMs > 54000000) d.long++;
+                        d.shifts.push(`${dateObj.toLocaleDateString([],{weekday:'short'})}: ${d.lastStart.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} - ${dateObj.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} (${(shiftMs/3600000).toFixed(1)}h)`);
                         d.lastStart = null; d.status = 'OFFLINE';
-                    }
-                    else if (log.action_type === 'NIGHT OUT') { d.nights++; nightCount++; d.nightDates.add(dateObj.toDateString()); }
-                    d.lastLoc = log.coordinates; d.lastTime = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    } else if (log.action_type === 'NIGHT OUT') { d.nights++; nights++; }
+                    d.lastTime = dateObj.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                    d.lastLoc = log.coordinates;
                 });
 
                 knownDrivers = Array.from(driverSet).sort();
                 tbody.innerHTML = "";
                 Object.keys(report).sort().forEach(key => {
                     const d = report[key];
-                    const v = vehicleData[key] || { status: "⌛ NO CHECK", detail: "No data." };
-                    if (v.status.includes("⚠️")) defects++;
+                    const v = vehicleData[key] || { status: "No Check" };
                     if (d.status === 'ACTIVE') activeCount++;
-                    const tooltipText = d.shifts.map(s => s.text + (d.nightDates.has(s.date) ? " (N)" : "")).join('\n');
-                    tbody.innerHTML += `<tr><td><span class="driver-name" title="${tooltipText}"><strong>${d.name.toUpperCase()}</strong></span></td><td><span class="badge ${d.status === 'ACTIVE' ? 'badge-active' : ''}" style="background:${d.status === 'ACTIVE' ? '' : '#334155'}">${d.status}</span></td><td>${(d.totalMs/3600000).toFixed(2)}h</td><td>${d.longShifts}/3</td><td>${d.nights}</td><td>${d.lastTime}</td><td class="check-cell" style="color:${v.status.includes("⚠️") ? 'var(--red)' : (v.status.includes("✅") ? 'var(--active)' : '#94a3b8')}" title="${v.detail}">${v.status}</td><td><span class="map-link" onclick="updateDock('${d.lastLoc}', '${d.name}')">📍 GPS</span></td></tr>`;
+                    tbody.innerHTML += `<tr>
+                        <td><span class="driver-name" onclick="showPopover(event, '${d.name}', \`${d.shifts.join('\n')}\`)">${d.name.toUpperCase()}</span></td>
+                        <td><span class="badge ${d.status==='ACTIVE'?'badge-active':''}" style="background:${d.status==='ACTIVE'?'':'#334155'}">${d.status}</span></td>
+                        <td>${(d.ms/3600000).toFixed(2)}h</td>
+                        <td>${d.long}/3</td>
+                        <td>${d.nights}</td>
+                        <td style="opacity:0.6">${d.lastTime}</td>
+                        <td style="color:${v.status.includes('⚠️')?'var(--red)':'#94a3b8'}">${v.status}</td>
+                        <td><span class="map-link" onclick="updateDock('${d.lastLoc}', '${d.name}')">📍 GPS</span></td>
+                    </tr>`;
                 });
 
                 document.getElementById('stat-total').innerText = Object.keys(report).length;
                 document.getElementById('stat-active').innerText = activeCount;
-                document.getElementById('stat-long').innerText = alerts;
-                document.getElementById('stat-nights').innerText = nightCount;
-                document.getElementById('stat-health').innerText = `${Math.round(((Object.keys(report).length - defects) / (Object.keys(report).length || 1)) * 100)}%`;
-                document.getElementById('stat-wages').innerText = `£${((grandTotalMs/3600000)*HOURLY_RATE).toLocaleString(undefined,{minimumFractionDigits:2})}`;
-            } catch (err) { tbody.innerHTML = "<tr><td colspan='8'>SYNC ERROR</td></tr>"; }
+                document.getElementById('stat-nights').innerText = nights;
+                document.getElementById('stat-wages').innerText = `£${((totalMs/3600000)*HOURLY_RATE).toLocaleString()}`;
+            } catch (e) { tbody.innerHTML = "<tr><td colspan='8'>Error</td></tr>"; }
         }
+
+        async function submitManualEntry() {
+            const select = document.getElementById('manual-driver-select');
+            let name = select.value === 'NEW_DRIVER' ? document.getElementById('manual-driver-new').value : select.value;
+            const action = document.getElementById('manual-action').value;
+            const time = document.getElementById('manual-time').value;
+            if(!name || !time) return alert("Missing Info");
+            await _supabase.from('fleet_logs').insert([{ driver_name: name.trim(), action_type: action, created_at: new Date(time).toISOString(), coordinates: "53.1424,-1.1396" }]);
+            closeModal(); loadData();
+        }
+
         window.onload = loadData;
-        setInterval(() => { if(currentView === 'current') loadData(); }, 60000); 
+        setInterval(loadData, 60000);
     </script>
 </body>
 </html>
