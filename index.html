@@ -31,20 +31,25 @@
         .logo span { color: var(--red); }
         
         .action-bar { display: flex; gap: 10px; align-items: center; }
-        .btn { background: var(--red); color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 10px; text-decoration: none; display: inline-flex; align-items: center; }
+        .btn { background: var(--red); color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 10px; text-decoration: none; display: inline-flex; align-items: center; border: 1px solid transparent; }
+        .btn:active { transform: translateY(1px); }
         .btn-alt { background: var(--border); color: #cbd5e1; }
-        .btn-download { background: var(--blue); }
+        .btn-blue { background: var(--blue); }
 
-        /* CUSTOM POPOVER BOX */
+        /* POPUP LOG BOX */
         .popover {
-            display: none; position: absolute; background: #0f172a; border: 1px solid var(--red);
-            padding: 15px; border-radius: 8px; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            max-width: 300px; color: #e2e8f0; font-size: 12px; line-height: 1.6;
+            display: none; position: fixed; background: #0f172a; border: 2px solid var(--red);
+            padding: 15px; border-radius: 8px; z-index: 9999; box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            width: 320px; color: #e2e8f0; font-size: 12px; line-height: 1.6;
         }
-        .popover-header { font-weight: 900; color: var(--red); margin-bottom: 8px; border-bottom: 1px solid #334155; padding-bottom: 5px; display: flex; justify-content: space-between; }
-        .close-pop { cursor: pointer; color: #64748b; font-size: 16px; font-weight: bold; }
+        .popover-header { font-weight: 900; color: var(--red); margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .popover-controls { display: flex; gap: 5px; }
+        .pop-btn { padding: 4px 10px; border-radius: 4px; font-size: 9px; font-weight: 900; cursor: pointer; border: none; text-transform: uppercase; transition: opacity 0.2s; }
+        .pop-btn:hover { opacity: 0.8; }
+        .btn-copy { background: var(--blue); color: white; }
+        .btn-close { background: var(--red); color: white; }
 
-        /* STAT CARDS */
+        /* STATS */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 25px; }
         .stat-card { background: var(--card); padding: 15px; border-radius: 10px; border-left: 5px solid var(--border); }
         .stat-card h3 { margin: 0; font-size: 9px; color: #94a3b8; text-transform: uppercase; }
@@ -53,15 +58,15 @@
         /* TABLE */
         .table-container { background: var(--card); border-radius: 12px; overflow-x: auto; border: 1px solid var(--border); }
         table { width: 100%; border-collapse: collapse; min-width: 1100px; }
-        th { padding: 18px; font-size: 11px; text-transform: uppercase; color: #94a3b8; border-bottom: 2px solid var(--border); text-align: left; background: rgba(0,0,0,0.1); }
+        th { padding: 18px; font-size: 11px; text-transform: uppercase; color: #94a3b8; border-bottom: 2px solid var(--border); text-align: left; }
         td { padding: 16px 18px; border-bottom: 1px solid var(--border); font-size: 14px; }
         
-        .driver-name { cursor: pointer; color: var(--blue); font-weight: 800; border-bottom: 1px dashed var(--blue); }
+        .driver-name { cursor: pointer; color: var(--blue); font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
         .badge { padding: 5px 10px; border-radius: 4px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
         .badge-active { background: var(--active); color: white; }
         .map-link { color: var(--blue); cursor: pointer; font-weight: 800; font-size: 11px; }
 
-        /* MODAL */
+        /* MODALS */
         #manual-modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.9); }
         .modal-content { background: var(--card); margin: 8% auto; padding: 30px; border-radius: 12px; width: 400px; border: 1px solid var(--border); }
         .form-group { margin-bottom: 15px; }
@@ -72,9 +77,15 @@
 <body>
 
     <div id="popover-box" class="popover">
-        <div class="popover-header"><span id="pop-name">DRIVER LOG</span> <span class="close-pop" onclick="hidePopover()">×</span></div>
-        <div id="pop-content" style="white-space: pre-wrap;"></div>
-        <div style="font-size: 9px; color: #64748b; margin-top: 10px; border-top: 1px solid #334155; padding-top: 5px;">Highlight text above to copy.</div>
+        <div class="popover-header">
+            <span id="pop-name">DRIVER LOG</span> 
+            <div class="popover-controls">
+                <button class="pop-btn btn-copy" onclick="copyLog(event)">Copy Log</button>
+                <button class="pop-btn btn-close" onclick="hidePopover(event)">Close</button>
+            </div>
+        </div>
+        <div id="pop-content" style="white-space: pre-wrap; max-height: 250px; overflow-y: auto;"></div>
+        <div style="font-size: 9px; color: #64748b; margin-top: 10px; border-top: 1px solid #334155; padding-top: 5px;">Shifts marked (N) include a Night Out.</div>
     </div>
 
     <div id="manual-modal">
@@ -91,8 +102,8 @@
             <div class="form-group">
                 <label>Action Type</label>
                 <select id="manual-action">
-                    <option value="START">START (Clock In)</option>
-                    <option value="END">END (Clock Out)</option>
+                    <option value="START">START</option>
+                    <option value="END">END</option>
                     <option value="NIGHT OUT">NIGHT OUT</option>
                 </select>
             </div>
@@ -111,7 +122,6 @@
         <div class="sidebar-header">FTS DATA</div>
         <div class="sidebar-content" id="sidebar-info">
             <p><strong>System:</strong> Operational</p>
-            <p id="view-indicator">Showing: <b>Current Week</b></p>
             <p style="margin-top:10px; color:var(--payroll)">Rate: £22.04/hr</p>
         </div>
         <div class="map-dock"><iframe id="sidebar-map" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
@@ -121,7 +131,7 @@
         <div class="header">
             <div class="logo">FTS <span>DATA CENTRE</span></div>
             <div class="action-bar">
-                <button class="btn btn-download" onclick="downloadLastWeekPDF()">📄 Export PDF</button>
+                <button class="btn btn-blue" onclick="downloadLastWeekPDF()">📄 Export PDF</button>
                 <a href="https://docs.google.com/spreadsheets/d/1LJpZqCfRlNNNr494sCB5Ax1hFwFh4e7LzAIa0sTHoks/edit?usp=sharing" target="_blank" class="btn">⛽ Fuel</a>
                 <a href="https://docs.google.com/spreadsheets/d/1nZvQOplnru5hUCy4VRmm7bVHOwuJyzvV4CD3DyDGmO0/edit?usp=sharing" target="_blank" class="btn">🚛 Trailer</a>
                 <button class="btn btn-alt" onclick="openModal()">➕ Manual</button>
@@ -139,7 +149,7 @@
         <div class="table-container">
             <table>
                 <thead>
-                    <tr><th>Driver (Click for Log)</th><th>Status</th><th>Weekly Hours</th><th>15hr Usage</th><th>Nights</th><th>Last Action</th><th>Check</th><th>GPS</th></tr>
+                    <tr><th>Driver (Click Log)</th><th>Status</th><th>Weekly Hours</th><th>15hr Usage</th><th>Nights</th><th>Last Action</th><th>Check</th><th>GPS</th></tr>
                 </thead>
                 <tbody id="table-body"></tbody>
             </table>
@@ -151,20 +161,51 @@
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1idWR3bnd4dWNsdXdnYmtnYmZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMDQwMjYsImV4cCI6MjA5MDc4MDAyNn0.xFv-FiQ894vdfJuQYWQyF4WzQXmlnmnKvz_c8nuzl5Q"; 
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzeQNNTsffmVMKNFhyJ9VQ-LVF_R58QMBTQQnC5enWwSrKaVHv9vC5r8_pryxAonfmXlg/exec";
         const HOURLY_RATE = 22.04;
-
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let knownDrivers = [];
 
-        // UI ACTIONS
-        function showPopover(event, name, logs) {
+        // POPOVER CONTROLLER
+        function showPopover(event, name, logData) {
+            event.stopPropagation();
             const pop = document.getElementById('popover-box');
             document.getElementById('pop-name').innerText = name.toUpperCase();
-            document.getElementById('pop-content').innerText = logs || "No completed shifts recorded.";
+            document.getElementById('pop-content').innerText = logData || "No shifts found.";
             pop.style.display = 'block';
-            pop.style.left = (event.pageX + 10) + 'px';
-            pop.style.top = (event.pageY + 10) + 'px';
+            let x = event.clientX + 15; let y = event.clientY + 15;
+            if (x + 320 > window.innerWidth) x = window.innerWidth - 340;
+            if (y + 300 > window.innerHeight) y = window.innerHeight - 320;
+            pop.style.left = x + 'px'; pop.style.top = y + 'px';
         }
-        function hidePopover() { document.getElementById('popover-box').style.display = 'none'; }
+
+        function hidePopover(event) { 
+            if (event) event.stopPropagation(); // Stop background listeners from confusing the close
+            document.getElementById('popover-box').style.display = 'none'; 
+        }
+
+        async function copyLog(event) {
+            if (event) event.stopPropagation();
+            const content = document.getElementById('pop-content').innerText;
+            const driver = document.getElementById('pop-name').innerText;
+            const btn = document.querySelector('.btn-copy');
+            try {
+                await navigator.clipboard.writeText(`LOG FOR ${driver}:\n${content}`);
+                btn.innerText = "COPIED!";
+                btn.style.background = "#22c55e";
+                setTimeout(() => { 
+                    btn.innerText = "COPY LOG"; 
+                    btn.style.background = "var(--blue)"; 
+                }, 2000);
+            } catch (err) { alert("Failed to copy"); }
+        }
+
+        // Global click listener for auto-close
+        document.addEventListener('click', (e) => {
+            const pop = document.getElementById('popover-box');
+            if (pop.style.display === 'block' && !pop.contains(e.target) && !e.target.classList.contains('driver-name')) {
+                hidePopover();
+            }
+        });
+
         function openModal() { 
             const select = document.getElementById('manual-driver-select');
             select.innerHTML = '<option value="">-- Choose Driver --</option>';
@@ -174,21 +215,17 @@
         }
         function closeModal() { document.getElementById('manual-modal').style.display = 'none'; }
         function toggleNewDriverInput() { const select = document.getElementById('manual-driver-select'); document.getElementById('new-driver-container').style.display = (select.value === 'NEW_DRIVER') ? 'block' : 'none'; }
-        function updateDock(coords, name) { const f = document.getElementById('sidebar-map'); f.style.display="block"; f.src = `https://maps.google.com/maps?q=${coords}&t=k&z=15&output=embed`; document.getElementById('sidebar-info').innerHTML = `<div style="background:var(--red);padding:15px;border-radius:8px;color:white;">LOCK: <strong>${name.toUpperCase()}</strong></div>`; }
+        function updateDock(coords, name) { const f = document.getElementById('sidebar-map'); f.style.display="block"; f.src = `https://www.google.com/maps?q=${coords}&t=k&z=15&output=embed`; }
 
-        // PDF EXPORT
         async function downloadLastWeekPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('l', 'mm', 'a4');
             const now = new Date();
             const day = now.getDay();
             const diff = day === 0 ? -6 : 1 - day;
-            let start = new Date(now.setDate(now.getDate() + diff));
-            start.setHours(0,0,0,0);
+            let start = new Date(now.setDate(now.getDate() + diff)); start.setHours(0,0,0,0);
             let end = new Date(start); start.setDate(start.getDate() - 7);
-
             const { data: logs } = await _supabase.from('fleet_logs').select('*').gte('created_at', start.toISOString()).lt('created_at', end.toISOString()).order('created_at', { ascending: true });
-
             const report = {};
             logs.forEach(log => {
                 const key = log.driver_name.toLowerCase().trim();
@@ -196,51 +233,54 @@
                 if (log.action_type === 'START') report[key].lastStart = new Date(log.created_at);
                 else if (log.action_type === 'END' && report[key].lastStart) {
                     const shiftMs = new Date(log.created_at) - report[key].lastStart;
-                    report[key].totalMs += shiftMs;
-                    if (shiftMs > 54000000) report[key].long++;
+                    report[key].totalMs += shiftMs; if (shiftMs > 54000000) report[key].long++;
                     report[key].lastStart = null;
                 } else if (log.action_type === 'NIGHT OUT') report[key].nights++;
             });
-
             const rows = Object.values(report).map(d => [d.name.toUpperCase(), (d.totalMs/3600000).toFixed(2) + 'h', d.long + '/3', d.nights, '£' + ((d.totalMs/3600000)*HOURLY_RATE).toLocaleString()]);
             doc.text("FTS WEEKLY PAYROLL REPORT", 14, 20);
             doc.autoTable({ startY: 30, head: [['DRIVER', 'HOURS', '15hr', 'NIGHTS', 'WAGES']], body: rows, headStyles: { fillColor: [230, 36, 17] } });
             doc.save(`FTS_Payroll_${start.toLocaleDateString()}.pdf`);
         }
 
-        // MAIN DATA LOAD
         async function loadData() {
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; padding:40px;'>Syncing...</td></tr>";
             try {
                 const vRes = await fetch(GOOGLE_SCRIPT_URL);
                 const vehicleData = await vRes.json();
-                const now = new Date();
-                const day = now.getDay();
-                const diff = day === 0 ? -6 : 1 - day;
-                let start = new Date(now.setDate(now.getDate() + diff));
-                start.setHours(0,0,0,0);
+                const now = new Date(); const day = now.getDay(); const diff = day === 0 ? -6 : 1 - day;
+                let start = new Date(now.setDate(now.getDate() + diff)); start.setHours(0,0,0,0);
 
                 const { data: logs } = await _supabase.from('fleet_logs').select('*').gte('created_at', start.toISOString()).order('created_at', { ascending: true });
                 
                 const report = {};
-                let activeCount = 0, nights = 0, totalMs = 0;
+                let activeCount = 0, nightTotal = 0, totalMs = 0;
                 let driverSet = new Set();
                 
                 logs.forEach(log => {
                     const key = log.driver_name.toLowerCase().trim();
                     driverSet.add(log.driver_name);
-                    if (!report[key]) report[key] = { name: log.driver_name, ms: 0, lastStart: null, shifts: [], status: 'OFFLINE', long: 0, nights: 0, lastTime: '', lastLoc: log.coordinates };
+                    if (!report[key]) report[key] = { name: log.driver_name, ms: 0, lastStart: null, shifts: [], status: 'OFFLINE', long: 0, nights: 0, lastTime: '', lastLoc: log.coordinates, nightDates: new Set() };
                     const d = report[key];
                     const dateObj = new Date(log.created_at);
+                    const dateKey = dateObj.toLocaleDateString();
+
                     if (log.action_type === 'START') { d.lastStart = dateObj; d.status = 'ACTIVE'; }
                     else if (log.action_type === 'END' && d.lastStart) {
                         const shiftMs = dateObj - d.lastStart;
                         d.ms += shiftMs; totalMs += shiftMs;
                         if (shiftMs > 54000000) d.long++;
-                        d.shifts.push(`${dateObj.toLocaleDateString([],{weekday:'short'})}: ${d.lastStart.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} - ${dateObj.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} (${(shiftMs/3600000).toFixed(1)}h)`);
+                        d.shifts.push({ 
+                            start: d.lastStart, end: dateObj, 
+                            duration: (shiftMs/3600000).toFixed(1),
+                            dateLabel: dateObj.toLocaleDateString([], {weekday:'short'}),
+                            dateKey: dateKey
+                        });
                         d.lastStart = null; d.status = 'OFFLINE';
-                    } else if (log.action_type === 'NIGHT OUT') { d.nights++; nights++; }
+                    } else if (log.action_type === 'NIGHT OUT') { 
+                        d.nights++; nightTotal++; d.nightDates.add(dateKey); 
+                    }
                     d.lastTime = dateObj.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
                     d.lastLoc = log.coordinates;
                 });
@@ -251,8 +291,15 @@
                     const d = report[key];
                     const v = vehicleData[key] || { status: "No Check" };
                     if (d.status === 'ACTIVE') activeCount++;
-                    tbody.innerHTML += `<tr>
-                        <td><span class="driver-name" onclick="showPopover(event, '${d.name}', \`${d.shifts.join('\n')}\`)">${d.name.toUpperCase()}</span></td>
+                    
+                    const shiftLogFormatted = d.shifts.map(s => {
+                        const hasNight = d.nightDates.has(s.dateKey) ? " (N)" : "";
+                        return `${s.dateLabel}: ${s.start.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} - ${s.end.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} (${s.duration}h)${hasNight}`;
+                    }).join('\n');
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><span class="driver-name">${d.name.toUpperCase()}</span></td>
                         <td><span class="badge ${d.status==='ACTIVE'?'badge-active':''}" style="background:${d.status==='ACTIVE'?'':'#334155'}">${d.status}</span></td>
                         <td>${(d.ms/3600000).toFixed(2)}h</td>
                         <td>${d.long}/3</td>
@@ -260,14 +307,16 @@
                         <td style="opacity:0.6">${d.lastTime}</td>
                         <td style="color:${v.status.includes('⚠️')?'var(--red)':'#94a3b8'}">${v.status}</td>
                         <td><span class="map-link" onclick="updateDock('${d.lastLoc}', '${d.name}')">📍 GPS</span></td>
-                    </tr>`;
+                    `;
+                    tr.querySelector('.driver-name').onclick = (e) => showPopover(e, d.name, shiftLogFormatted);
+                    tbody.appendChild(tr);
                 });
 
                 document.getElementById('stat-total').innerText = Object.keys(report).length;
                 document.getElementById('stat-active').innerText = activeCount;
-                document.getElementById('stat-nights').innerText = nights;
+                document.getElementById('stat-nights').innerText = nightTotal;
                 document.getElementById('stat-wages').innerText = `£${((totalMs/3600000)*HOURLY_RATE).toLocaleString()}`;
-            } catch (e) { tbody.innerHTML = "<tr><td colspan='8'>Error</td></tr>"; }
+            } catch (e) { tbody.innerHTML = "<tr><td colspan='8'>Sync Error</td></tr>"; }
         }
 
         async function submitManualEntry() {
