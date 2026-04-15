@@ -18,46 +18,55 @@
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; color: var(--text); overflow: hidden; }
         
         /* SIDEBAR */
-        .sidebar { width: 320px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
+        .sidebar { width: 350px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
         .sidebar-header { padding: 25px; border-bottom: 1px solid var(--border); font-weight: 900; color: var(--red); text-transform: uppercase; font-size: 1.2rem; letter-spacing: 1px; }
         .sidebar-content { flex: 1; padding: 20px; font-size: 13px; color: #94a3b8; overflow-y: auto; line-height: 1.6; }
-        .map-dock { height: 320px; border-top: 3px solid var(--red); background: #000; position: relative; }
+        
+        .driver-profile-box { display: none; margin-bottom: 20px; animation: fadeIn 0.3s; }
+        .profile-title { color: var(--text); font-size: 18px; font-weight: 800; border-left: 4px solid var(--red); padding-left: 10px; margin-bottom: 15px; }
+        .section-label { color: var(--red); font-weight: 900; font-size: 10px; text-transform: uppercase; margin-top: 20px; display: block; letter-spacing: 1px; }
+        
+        /* UPDATED LOG TEXT FONT SIZE */
+        .log-text { 
+            background: #000; 
+            padding: 12px; 
+            border-radius: 5px; 
+            color: #f1f5f9; /* Brighter white */
+            font-family: 'Segoe UI', monospace; 
+            font-size: 13px; /* Increased from 11px */
+            white-space: pre-wrap; 
+            margin-top: 8px; 
+            border: 1px solid #1e293b; 
+            line-height: 1.5;
+        }
+
+        .notes-text { background: #1e293b; border: 1px solid var(--border); padding: 10px; border-radius: 5px; color: #f8fafc; margin-top: 5px; font-style: italic; font-size: 12px; }
+
+        .map-dock { height: 280px; border-top: 3px solid var(--red); background: #000; position: relative; }
         #sidebar-map { width: 100%; height: 100%; border: none; display: none; }
         
-        /* MAIN CONTENT */
+        /* ACTION BAR & BUTTONS */
         .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 25px; position: relative; }
         .header { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 20px 30px; border-radius: 12px; border-bottom: 4px solid var(--red); margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         .logo { font-size: 26px; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; }
         .logo span { color: var(--red); }
         
-        .action-bar { display: flex; gap: 10px; align-items: center; }
-        .btn { background: var(--red); color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 10px; text-decoration: none; display: inline-flex; align-items: center; border: 1px solid transparent; }
-        .btn:active { transform: translateY(1px); }
-        .btn-alt { background: var(--border); color: #cbd5e1; }
-        .btn-blue { background: var(--blue); }
+        .action-bar { display: flex; gap: 8px; align-items: center; }
+        .btn { background: var(--border); color: #cbd5e1; border: none; padding: 10px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; transition: background 0.2s, color 0.2s; }
+        .btn:hover { background: #475569; color: white; }
+        
+        .btn-toggle-active { background: var(--payroll); color: #000; }
+        .btn-toggle-active:hover { background: #d97706; color: #000; }
+        .btn-blue-accent { background: var(--blue); color: white; }
 
-        /* POPUP LOG BOX */
-        .popover {
-            display: none; position: fixed; background: #0f172a; border: 2px solid var(--red);
-            padding: 15px; border-radius: 8px; z-index: 9999; box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-            width: 320px; color: #e2e8f0; font-size: 12px; line-height: 1.6;
-        }
-        .popover-header { font-weight: 900; color: var(--red); margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .popover-controls { display: flex; gap: 5px; }
-        .pop-btn { padding: 4px 10px; border-radius: 4px; font-size: 9px; font-weight: 900; cursor: pointer; border: none; text-transform: uppercase; transition: opacity 0.2s; }
-        .pop-btn:hover { opacity: 0.8; }
-        .btn-copy { background: var(--blue); color: white; }
-        .btn-close { background: var(--red); color: white; }
-
-        /* STATS */
+        /* STATS & TABLES */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 25px; }
         .stat-card { background: var(--card); padding: 15px; border-radius: 10px; border-left: 5px solid var(--border); }
         .stat-card h3 { margin: 0; font-size: 9px; color: #94a3b8; text-transform: uppercase; }
         .stat-card p { margin: 8px 0 0; font-size: 22px; font-weight: 800; }
         
-        /* TABLE */
         .table-container { background: var(--card); border-radius: 12px; overflow-x: auto; border: 1px solid var(--border); }
-        table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
         th { padding: 18px; font-size: 11px; text-transform: uppercase; color: #94a3b8; border-bottom: 2px solid var(--border); text-align: left; }
         td { padding: 16px 18px; border-bottom: 1px solid var(--border); font-size: 14px; }
         
@@ -66,63 +75,37 @@
         .badge-active { background: var(--active); color: white; }
         .map-link { color: var(--blue); cursor: pointer; font-weight: 800; font-size: 11px; }
 
-        /* MODALS */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* MODAL */
         #manual-modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.9); }
         .modal-content { background: var(--card); margin: 8% auto; padding: 30px; border-radius: 12px; width: 400px; border: 1px solid var(--border); }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
-        .form-group input, .form-group select { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: white; border-radius: 5px; box-sizing: border-box; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: white; border-radius: 5px; box-sizing: border-box; }
+        .modal-btn-save { background: var(--red) !important; color: white !important; }
     </style>
 </head>
 <body>
 
-    <div id="popover-box" class="popover">
-        <div class="popover-header">
-            <span id="pop-name">DRIVER LOG</span> 
-            <div class="popover-controls">
-                <button class="pop-btn btn-copy" onclick="copyLog(event)">Copy Log</button>
-                <button class="pop-btn btn-close" onclick="hidePopover(event)">Close</button>
-            </div>
-        </div>
-        <div id="pop-content" style="white-space: pre-wrap; max-height: 250px; overflow-y: auto;"></div>
-        <div style="font-size: 9px; color: #64748b; margin-top: 10px; border-top: 1px solid #334155; padding-top: 5px;">Shifts marked (N) include a Night Out.</div>
-    </div>
-
-    <div id="manual-modal">
-        <div class="modal-content">
-            <h2 style="color:var(--red); text-transform:uppercase; font-size:18px; margin-top:0; border-bottom:1px solid var(--border); padding-bottom:15px;">Manual Log Entry</h2>
-            <div class="form-group">
-                <label>Select Driver</label>
-                <select id="manual-driver-select" onchange="toggleNewDriverInput()"></select>
-            </div>
-            <div id="new-driver-container" class="form-group" style="display:none;">
-                <label>New Driver Name</label>
-                <input type="text" id="manual-driver-new" placeholder="Enter Full Name">
-            </div>
-            <div class="form-group">
-                <label>Action Type</label>
-                <select id="manual-action">
-                    <option value="START">START</option>
-                    <option value="END">END</option>
-                    <option value="NIGHT OUT">NIGHT OUT</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Date & Time</label>
-                <input type="datetime-local" id="manual-time">
-            </div>
-            <div style="display:flex; gap:10px; margin-top:25px;">
-                <button class="btn" style="flex:1; padding: 15px;" onclick="submitManualEntry()">Submit Entry</button>
-                <button class="btn btn-alt" style="padding: 15px;" onclick="closeModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
-
     <aside class="sidebar">
         <div class="sidebar-header">FTS DATA</div>
         <div class="sidebar-content" id="sidebar-info">
-            <p><strong>System:</strong> Operational</p>
-            <p style="margin-top:10px; color:var(--payroll)">Rate: £22.04/hr</p>
+            <div id="default-sidebar">
+                <p><strong>Status:</strong> <span style="color:var(--active)">Operational</span></p>
+                <p style="margin-top:10px; color:var(--payroll)">Rate: £22.04/hr</p>
+            </div>
+
+            <div id="driver-profile" class="driver-profile-box">
+                <div class="profile-title" id="side-name">DRIVER</div>
+                <button id="side-copy-btn" class="btn btn-blue-accent" style="width:100%; margin-bottom:15px; justify-content:center;">Copy Full Log</button>
+                
+                <span class="section-label">Weekly Shift Log</span>
+                <div class="log-text" id="side-log">...</div>
+                
+                <span class="section-label">Additional Notes</span>
+                <div class="notes-text" id="side-notes">...</div>
+            </div>
         </div>
         <div class="map-dock"><iframe id="sidebar-map" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
     </aside>
@@ -131,10 +114,11 @@
         <div class="header">
             <div class="logo">FTS <span>DATA CENTRE</span></div>
             <div class="action-bar">
-                <button class="btn btn-blue" onclick="downloadLastWeekPDF()">📄 Export PDF</button>
+                <button id="week-toggle" class="btn" onclick="toggleWeek()">📅 Previous Week</button>
+                <button class="btn" onclick="exportDataPDF()">📄 Export PDF</button>
                 <a href="https://docs.google.com/spreadsheets/d/1LJpZqCfRlNNNr494sCB5Ax1hFwFh4e7LzAIa0sTHoks/edit?usp=sharing" target="_blank" class="btn">⛽ Fuel</a>
                 <a href="https://docs.google.com/spreadsheets/d/1nZvQOplnru5hUCy4VRmm7bVHOwuJyzvV4CD3DyDGmO0/edit?usp=sharing" target="_blank" class="btn">🚛 Trailer</a>
-                <button class="btn btn-alt" onclick="openModal()">➕ Manual</button>
+                <button class="btn" onclick="openModal()">➕ Manual Entry</button>
                 <button class="btn" onclick="loadData()">🔄 Refresh</button>
             </div>
         </div>
@@ -149,10 +133,22 @@
         <div class="table-container">
             <table>
                 <thead>
-                    <tr><th>Driver (Click Log)</th><th>Status</th><th>Weekly Hours</th><th>15hr Usage</th><th>Nights</th><th>Last Action</th><th>Check</th><th>GPS</th></tr>
+                    <tr><th>Driver</th><th>Status</th><th>Weekly Hours</th><th>15hr</th><th>Nights</th><th>Last Update</th><th>Vehicle Check</th><th>Location</th></tr>
                 </thead>
                 <tbody id="table-body"></tbody>
             </table>
+        </div>
+    </div>
+
+    <div id="manual-modal">
+        <div class="modal-content">
+            <h2 style="color:var(--red); text-transform:uppercase; font-size:16px; margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Manual Log Entry</h2>
+            <div class="form-group"><label>Driver</label><select id="manual-driver-select" onchange="toggleNewDriverInput()"></select></div>
+            <div id="new-driver-container" class="form-group" style="display:none;"><label>New Driver Name</label><input type="text" id="manual-driver-new"></div>
+            <div class="form-group"><label>Action</label><select id="manual-action"><option value="START">START</option><option value="END">END</option><option value="NIGHT OUT">NIGHT OUT</option></select></div>
+            <div class="form-group"><label>Date/Time</label><input type="datetime-local" id="manual-time"></div>
+            <div class="form-group"><label>Additional Notes</label><textarea id="manual-notes" rows="2" placeholder="Trailer wash, defect repairs, etc."></textarea></div>
+            <div style="display:flex; gap:10px; margin-top: 20px;"><button class="btn modal-btn-save" style="flex:1" onclick="submitManualEntry()">Save Log</button><button class="btn" onclick="closeModal()">Cancel</button></div>
         </div>
     </div>
 
@@ -162,109 +158,54 @@
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzeQNNTsffmVMKNFhyJ9VQ-LVF_R58QMBTQQnC5enWwSrKaVHv9vC5r8_pryxAonfmXlg/exec";
         const HOURLY_RATE = 22.04;
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let isPreviousWeek = false;
         let knownDrivers = [];
+        let currentReport = {};
 
-        // POPOVER CONTROLLER
-        function showPopover(event, name, logData) {
-            event.stopPropagation();
-            const pop = document.getElementById('popover-box');
-            document.getElementById('pop-name').innerText = name.toUpperCase();
-            document.getElementById('pop-content').innerText = logData || "No shifts found.";
-            pop.style.display = 'block';
-            let x = event.clientX + 15; let y = event.clientY + 15;
-            if (x + 320 > window.innerWidth) x = window.innerWidth - 340;
-            if (y + 300 > window.innerHeight) y = window.innerHeight - 320;
-            pop.style.left = x + 'px'; pop.style.top = y + 'px';
-        }
-
-        function hidePopover(event) { 
-            if (event) event.stopPropagation(); // Stop background listeners from confusing the close
-            document.getElementById('popover-box').style.display = 'none'; 
-        }
-
-        async function copyLog(event) {
-            if (event) event.stopPropagation();
-            const content = document.getElementById('pop-content').innerText;
-            const driver = document.getElementById('pop-name').innerText;
-            const btn = document.querySelector('.btn-copy');
-            try {
-                await navigator.clipboard.writeText(`LOG FOR ${driver}:\n${content}`);
-                btn.innerText = "COPIED!";
-                btn.style.background = "#22c55e";
-                setTimeout(() => { 
-                    btn.innerText = "COPY LOG"; 
-                    btn.style.background = "var(--blue)"; 
-                }, 2000);
-            } catch (err) { alert("Failed to copy"); }
-        }
-
-        // Global click listener for auto-close
-        document.addEventListener('click', (e) => {
-            const pop = document.getElementById('popover-box');
-            if (pop.style.display === 'block' && !pop.contains(e.target) && !e.target.classList.contains('driver-name')) {
-                hidePopover();
-            }
-        });
-
-        function openModal() { 
-            const select = document.getElementById('manual-driver-select');
-            select.innerHTML = '<option value="">-- Choose Driver --</option>';
-            knownDrivers.forEach(d => { select.innerHTML += `<option value="${d}">${d.toUpperCase()}</option>`; });
-            select.innerHTML += '<option value="NEW_DRIVER">-- Add New Driver... --</option>';
-            document.getElementById('manual-modal').style.display = 'block'; 
-        }
-        function closeModal() { document.getElementById('manual-modal').style.display = 'none'; }
-        function toggleNewDriverInput() { const select = document.getElementById('manual-driver-select'); document.getElementById('new-driver-container').style.display = (select.value === 'NEW_DRIVER') ? 'block' : 'none'; }
-        function updateDock(coords, name) { const f = document.getElementById('sidebar-map'); f.style.display="block"; f.src = `https://www.google.com/maps?q=${coords}&t=k&z=15&output=embed`; }
-
-        async function downloadLastWeekPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'mm', 'a4');
-            const now = new Date();
-            const day = now.getDay();
-            const diff = day === 0 ? -6 : 1 - day;
-            let start = new Date(now.setDate(now.getDate() + diff)); start.setHours(0,0,0,0);
-            let end = new Date(start); start.setDate(start.getDate() - 7);
-            const { data: logs } = await _supabase.from('fleet_logs').select('*').gte('created_at', start.toISOString()).lt('created_at', end.toISOString()).order('created_at', { ascending: true });
-            const report = {};
-            logs.forEach(log => {
-                const key = log.driver_name.toLowerCase().trim();
-                if (!report[key]) report[key] = { name: log.driver_name, totalMs: 0, lastStart: null, long: 0, nights: 0 };
-                if (log.action_type === 'START') report[key].lastStart = new Date(log.created_at);
-                else if (log.action_type === 'END' && report[key].lastStart) {
-                    const shiftMs = new Date(log.created_at) - report[key].lastStart;
-                    report[key].totalMs += shiftMs; if (shiftMs > 54000000) report[key].long++;
-                    report[key].lastStart = null;
-                } else if (log.action_type === 'NIGHT OUT') report[key].nights++;
-            });
-            const rows = Object.values(report).map(d => [d.name.toUpperCase(), (d.totalMs/3600000).toFixed(2) + 'h', d.long + '/3', d.nights, '£' + ((d.totalMs/3600000)*HOURLY_RATE).toLocaleString()]);
-            doc.text("FTS WEEKLY PAYROLL REPORT", 14, 20);
-            doc.autoTable({ startY: 30, head: [['DRIVER', 'HOURS', '15hr', 'NIGHTS', 'WAGES']], body: rows, headStyles: { fillColor: [230, 36, 17] } });
-            doc.save(`FTS_Payroll_${start.toLocaleDateString()}.pdf`);
+        function toggleWeek() {
+            isPreviousWeek = !isPreviousWeek;
+            const btn = document.getElementById('week-toggle');
+            btn.innerText = isPreviousWeek ? "📅 Current Week" : "📅 Previous Week";
+            btn.classList.toggle('btn-toggle-active', isPreviousWeek);
+            loadData();
         }
 
         async function loadData() {
             const tbody = document.getElementById('table-body');
-            tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; padding:40px;'>Syncing...</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; padding:40px;'>Syncing data...</td></tr>";
+            
             try {
                 const vRes = await fetch(GOOGLE_SCRIPT_URL);
                 const vehicleData = await vRes.json();
-                const now = new Date(); const day = now.getDay(); const diff = day === 0 ? -6 : 1 - day;
-                let start = new Date(now.setDate(now.getDate() + diff)); start.setHours(0,0,0,0);
 
-                const { data: logs } = await _supabase.from('fleet_logs').select('*').gte('created_at', start.toISOString()).order('created_at', { ascending: true });
+                const now = new Date();
+                const day = now.getDay();
+                const diff = day === 0 ? -6 : 1 - day;
+                let startDate = new Date(now.setDate(now.getDate() + diff));
+                startDate.setHours(0,0,0,0);
                 
+                if (isPreviousWeek) startDate.setDate(startDate.getDate() - 7);
+                let endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + 7);
+
+                const { data: logs } = await _supabase.from('fleet_logs').select('*')
+                    .gte('created_at', startDate.toISOString())
+                    .lt('created_at', endDate.toISOString())
+                    .order('created_at', { ascending: true });
+
                 const report = {};
                 let activeCount = 0, nightTotal = 0, totalMs = 0;
                 let driverSet = new Set();
-                
+
                 logs.forEach(log => {
                     const key = log.driver_name.toLowerCase().trim();
                     driverSet.add(log.driver_name);
-                    if (!report[key]) report[key] = { name: log.driver_name, ms: 0, lastStart: null, shifts: [], status: 'OFFLINE', long: 0, nights: 0, lastTime: '', lastLoc: log.coordinates, nightDates: new Set() };
+                    if (!report[key]) report[key] = { name: log.driver_name, ms: 0, lastStart: null, shifts: [], status: 'OFFLINE', long: 0, nights: 0, lastTime: '', lastLoc: log.coordinates, nightDates: new Set(), allNotes: [] };
+                    
                     const d = report[key];
                     const dateObj = new Date(log.created_at);
-                    const dateKey = dateObj.toLocaleDateString();
+                    if (log.notes_text) d.allNotes.push(`[${dateObj.toLocaleDateString()}] ${log.notes_text}`);
 
                     if (log.action_type === 'START') { d.lastStart = dateObj; d.status = 'ACTIVE'; }
                     else if (log.action_type === 'END' && d.lastStart) {
@@ -272,29 +213,27 @@
                         d.ms += shiftMs; totalMs += shiftMs;
                         if (shiftMs > 54000000) d.long++;
                         d.shifts.push({ 
-                            start: d.lastStart, end: dateObj, 
-                            duration: (shiftMs/3600000).toFixed(1),
-                            dateLabel: dateObj.toLocaleDateString([], {weekday:'short'}),
-                            dateKey: dateKey
+                            start: d.lastStart, end: dateObj, duration: (shiftMs/3600000).toFixed(1),
+                            dateKey: dateObj.toLocaleDateString(), dateLabel: dateObj.toLocaleDateString([], {weekday:'short'})
                         });
                         d.lastStart = null; d.status = 'OFFLINE';
-                    } else if (log.action_type === 'NIGHT OUT') { 
-                        d.nights++; nightTotal++; d.nightDates.add(dateKey); 
-                    }
+                    } else if (log.action_type === 'NIGHT OUT') { d.nights++; nightTotal++; d.nightDates.add(dateObj.toLocaleDateString()); }
                     d.lastTime = dateObj.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
                     d.lastLoc = log.coordinates;
                 });
 
+                currentReport = report;
                 knownDrivers = Array.from(driverSet).sort();
                 tbody.innerHTML = "";
+
                 Object.keys(report).sort().forEach(key => {
                     const d = report[key];
                     const v = vehicleData[key] || { status: "No Check" };
                     if (d.status === 'ACTIVE') activeCount++;
                     
                     const shiftLogFormatted = d.shifts.map(s => {
-                        const hasNight = d.nightDates.has(s.dateKey) ? " (N)" : "";
-                        return `${s.dateLabel}: ${s.start.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} - ${s.end.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} (${s.duration}h)${hasNight}`;
+                        const hasN = d.nightDates.has(s.dateKey) ? " (N)" : "";
+                        return `${s.dateLabel}: ${s.start.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} - ${s.end.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} (${s.duration}h)${hasN}`;
                     }).join('\n');
 
                     const tr = document.createElement('tr');
@@ -306,9 +245,9 @@
                         <td>${d.nights}</td>
                         <td style="opacity:0.6">${d.lastTime}</td>
                         <td style="color:${v.status.includes('⚠️')?'var(--red)':'#94a3b8'}">${v.status}</td>
-                        <td><span class="map-link" onclick="updateDock('${d.lastLoc}', '${d.name}')">📍 GPS</span></td>
+                        <td><span class="map-link" onclick="updateDock('${d.lastLoc}')">📍 GPS</span></td>
                     `;
-                    tr.querySelector('.driver-name').onclick = (e) => showPopover(e, d.name, shiftLogFormatted);
+                    tr.querySelector('.driver-name').onclick = () => updateSidebar(d.name, shiftLogFormatted, d.allNotes.join('\n'));
                     tbody.appendChild(tr);
                 });
 
@@ -319,14 +258,55 @@
             } catch (e) { tbody.innerHTML = "<tr><td colspan='8'>Sync Error</td></tr>"; }
         }
 
+        function updateSidebar(name, log, notes) {
+            document.getElementById('default-sidebar').style.display = 'none';
+            document.getElementById('driver-profile').style.display = 'block';
+            document.getElementById('side-name').innerText = name.toUpperCase();
+            document.getElementById('side-log').innerText = log || "No shifts recorded for this period.";
+            document.getElementById('side-notes').innerText = notes || "No additional work notes logged.";
+            document.getElementById('side-copy-btn').onclick = async () => {
+                await navigator.clipboard.writeText(`LOG FOR ${name}:\n${log}\n\nADDITIONAL NOTES:\n${notes}`);
+                document.getElementById('side-copy-btn').innerText = "LOG COPIED!";
+                setTimeout(() => document.getElementById('side-copy-btn').innerText = "Copy Full Log", 2000);
+            };
+        }
+
+        async function exportDataPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+            const title = isPreviousWeek ? "FTS PAYROLL REPORT: PREVIOUS WEEK" : "FTS PAYROLL REPORT: CURRENT WEEK";
+            const rows = Object.values(currentReport).map(d => [d.name.toUpperCase(), (d.ms/3600000).toFixed(2), d.long, d.nights, '£' + ((d.ms/3600000)*HOURLY_RATE).toLocaleString()]);
+            doc.text(title, 14, 20);
+            doc.autoTable({ startY: 30, head: [['DRIVER', 'TOTAL HOURS', '15hr RULE', 'NIGHTS', 'EST. WAGES']], body: rows, headStyles: { fillColor: [230, 36, 17] } });
+            doc.save(`FTS_Payroll_${isPreviousWeek?'Prev':'Curr'}.pdf`);
+        }
+
+        function openModal() { 
+            const select = document.getElementById('manual-driver-select');
+            select.innerHTML = '<option value="">-- Select Driver --</option>';
+            knownDrivers.forEach(d => { select.innerHTML += `<option value="${d}">${d.toUpperCase()}</option>`; });
+            select.innerHTML += '<option value="NEW_DRIVER">Add New Driver...</option>';
+            document.getElementById('manual-modal').style.display = 'block'; 
+        }
+        function closeModal() { document.getElementById('manual-modal').style.display = 'none'; }
+        function toggleNewDriverInput() { document.getElementById('new-driver-container').style.display = (document.getElementById('manual-driver-select').value === 'NEW_DRIVER') ? 'block' : 'none'; }
+        function updateDock(coords) { const f = document.getElementById('sidebar-map'); f.style.display="block"; f.src = `https://www.google.com/maps?q=${coords}&t=k&z=15&output=embed`; }
+
         async function submitManualEntry() {
             const select = document.getElementById('manual-driver-select');
             let name = select.value === 'NEW_DRIVER' ? document.getElementById('manual-driver-new').value : select.value;
-            const action = document.getElementById('manual-action').value;
-            const time = document.getElementById('manual-time').value;
-            if(!name || !time) return alert("Missing Info");
-            await _supabase.from('fleet_logs').insert([{ driver_name: name.trim(), action_type: action, created_at: new Date(time).toISOString(), coordinates: "53.1424,-1.1396" }]);
-            closeModal(); loadData();
+            if(!name || !document.getElementById('manual-time').value) return alert("Please fill in Driver and Time");
+            
+            await _supabase.from('fleet_logs').insert([{ 
+                driver_name: name.trim(), 
+                action_type: document.getElementById('manual-action').value, 
+                created_at: new Date(document.getElementById('manual-time').value).toISOString(), 
+                coordinates: "53.1424,-1.1396",
+                notes_text: document.getElementById('manual-notes').value.trim() || null
+            }]);
+            
+            closeModal(); 
+            loadData();
         }
 
         window.onload = loadData;
