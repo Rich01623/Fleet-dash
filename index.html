@@ -17,7 +17,6 @@
 
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; color: var(--text); overflow: hidden; }
         
-        /* SIDEBAR */
         .sidebar { width: 350px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
         .sidebar-header { padding: 25px; border-bottom: 1px solid var(--border); font-weight: 900; color: var(--red); text-transform: uppercase; font-size: 1.2rem; letter-spacing: 1px; }
         .sidebar-content { flex: 1; padding: 20px; font-size: 13px; color: #94a3b8; overflow-y: auto; line-height: 1.6; }
@@ -26,26 +25,16 @@
         .profile-title { color: var(--text); font-size: 18px; font-weight: 800; border-left: 4px solid var(--red); padding-left: 10px; margin-bottom: 15px; }
         .section-label { color: var(--red); font-weight: 900; font-size: 10px; text-transform: uppercase; margin-top: 20px; display: block; letter-spacing: 1px; }
         
-        /* UPDATED LOG TEXT FONT SIZE */
         .log-text { 
-            background: #000; 
-            padding: 12px; 
-            border-radius: 5px; 
-            color: #f1f5f9; /* Brighter white */
-            font-family: 'Segoe UI', monospace; 
-            font-size: 13px; /* Increased from 11px */
-            white-space: pre-wrap; 
-            margin-top: 8px; 
-            border: 1px solid #1e293b; 
-            line-height: 1.5;
+            background: #000; padding: 12px; border-radius: 5px; color: #f1f5f9; 
+            font-family: 'Segoe UI', monospace; font-size: 13px; white-space: pre-wrap; 
+            margin-top: 8px; border: 1px solid #1e293b; line-height: 1.5;
         }
 
         .notes-text { background: #1e293b; border: 1px solid var(--border); padding: 10px; border-radius: 5px; color: #f8fafc; margin-top: 5px; font-style: italic; font-size: 12px; }
-
         .map-dock { height: 280px; border-top: 3px solid var(--red); background: #000; position: relative; }
         #sidebar-map { width: 100%; height: 100%; border: none; display: none; }
         
-        /* ACTION BAR & BUTTONS */
         .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 25px; position: relative; }
         .header { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 20px 30px; border-radius: 12px; border-bottom: 4px solid var(--red); margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         .logo { font-size: 26px; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; }
@@ -54,12 +43,9 @@
         .action-bar { display: flex; gap: 8px; align-items: center; }
         .btn { background: var(--border); color: #cbd5e1; border: none; padding: 10px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; transition: background 0.2s, color 0.2s; }
         .btn:hover { background: #475569; color: white; }
-        
         .btn-toggle-active { background: var(--payroll); color: #000; }
-        .btn-toggle-active:hover { background: #d97706; color: #000; }
         .btn-blue-accent { background: var(--blue); color: white; }
 
-        /* STATS & TABLES */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 25px; }
         .stat-card { background: var(--card); padding: 15px; border-radius: 10px; border-left: 5px solid var(--border); }
         .stat-card h3 { margin: 0; font-size: 9px; color: #94a3b8; text-transform: uppercase; }
@@ -77,7 +63,6 @@
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* MODAL */
         #manual-modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.9); }
         .modal-content { background: var(--card); margin: 8% auto; padding: 30px; border-radius: 12px; width: 400px; border: 1px solid var(--border); }
         .form-group { margin-bottom: 15px; }
@@ -99,10 +84,8 @@
             <div id="driver-profile" class="driver-profile-box">
                 <div class="profile-title" id="side-name">DRIVER</div>
                 <button id="side-copy-btn" class="btn btn-blue-accent" style="width:100%; margin-bottom:15px; justify-content:center;">Copy Full Log</button>
-                
                 <span class="section-label">Weekly Shift Log</span>
                 <div class="log-text" id="side-log">...</div>
-                
                 <span class="section-label">Additional Notes</span>
                 <div class="notes-text" id="side-notes">...</div>
             </div>
@@ -228,9 +211,14 @@
 
                 Object.keys(report).sort().forEach(key => {
                     const d = report[key];
-                    const v = vehicleData[key] || { status: "No Check" };
+                    // MATCHING YOUR GOOGLE SCRIPT OUTPUT
+                    const v = vehicleData[key] || { status: "No Check", detail: "No check found", time: "" };
                     if (d.status === 'ACTIVE') activeCount++;
                     
+                    // Fixed: Using 'v.detail' as defined in your Google Script
+                    const statusText = v.status || "No Check";
+                    const tooltipText = v.detail || v.time || "No further details";
+
                     const shiftLogFormatted = d.shifts.map(s => {
                         const hasN = d.nightDates.has(s.dateKey) ? " (N)" : "";
                         return `${s.dateLabel}: ${s.start.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} - ${s.end.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} (${s.duration}h)${hasN}`;
@@ -244,7 +232,7 @@
                         <td>${d.long}/3</td>
                         <td>${d.nights}</td>
                         <td style="opacity:0.6">${d.lastTime}</td>
-                        <td style="color:${v.status.includes('⚠️')?'var(--red)':'#94a3b8'}">${v.status}</td>
+                        <td title="${tooltipText}" style="color:${statusText.includes('⚠️')?'var(--red)':'#94a3b8'}; cursor:help;">${statusText}</td>
                         <td><span class="map-link" onclick="updateDock('${d.lastLoc}')">📍 GPS</span></td>
                     `;
                     tr.querySelector('.driver-name').onclick = () => updateSidebar(d.name, shiftLogFormatted, d.allNotes.join('\n'));
