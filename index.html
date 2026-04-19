@@ -3,310 +3,403 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FTS DATA CENTRE</title>
+    <title>FROST Transport Planner - 4 Week Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
     <style>
-        :root { 
-            --red: #E62411; --bg: #020617; --sidebar: #0f172a; --card: #1e293b; 
-            --text: #f8fafc; --border: #334155; --active: #22c55e; 
-            --payroll: #f59e0b; --money: #10b981; --blue: #3b82f6; 
-            --whatsapp: #25D366;
+        :root {
+            --frost-red: #c1272d;
+            --frost-black: #1a1a1a;
+            --frost-blue: #0056b3; 
+            --frost-orange: #e67e22; /* Replaced the mustard yellow */
+            --light-grey: #f4f4f4;
+            --border-color: #ccc;
+            --whatsapp-green: #25D366;
+            --price-green: #2e7d32;
+            --sidebar-width: 320px;
         }
 
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; color: var(--text); overflow: hidden; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: var(--light-grey); overflow: hidden; }
         
-        .sidebar { width: 350px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
-        .sidebar-header { padding: 25px; border-bottom: 1px solid var(--border); font-weight: 900; color: var(--red); text-transform: uppercase; font-size: 1.2rem; letter-spacing: 1px; }
-        .sidebar-content { flex: 1; padding: 20px; font-size: 13px; color: #94a3b8; overflow-y: auto; line-height: 1.6; }
+        /* Night Mode Logic */
+        body:not(.day-mode) { background: #121212; color: #eee; }
+        body.day-mode { background: #fff; color: #000; }
         
-        .driver-profile-box { display: none; margin-bottom: 20px; animation: fadeIn 0.3s; }
-        .profile-title { color: var(--text); font-size: 18px; font-weight: 800; border-left: 4px solid var(--red); padding-left: 10px; margin-bottom: 15px; }
-        .section-label { color: var(--red); font-weight: 900; font-size: 10px; text-transform: uppercase; margin-top: 20px; display: block; letter-spacing: 1px; }
+        header { background: white; padding: 10px 20px; border-bottom: 3px solid var(--frost-red); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; z-index: 100; }
+        .logo-container img { height: 50px; }
         
-        .log-text { 
-            background: #000; padding: 12px; border-radius: 5px; color: #f1f5f9; 
-            font-family: 'Segoe UI', monospace; font-size: 13px; white-space: pre-wrap; 
-            margin-top: 8px; border: 1px solid #1e293b; line-height: 1.5;
-        }
+        .grand-total-box { background: var(--frost-black); color: white; padding: 5px 15px; border-radius: 6px; border-left: 4px solid var(--price-green); text-align: right; }
+        .grand-total-value { font-size: 1.1rem; font-weight: bold; color: var(--whatsapp-green); }
 
-        .notes-text { background: #1e293b; border: 1px solid var(--border); padding: 10px; border-radius: 5px; color: #f8fafc; margin-top: 5px; font-style: italic; font-size: 12px; }
-        .map-dock { height: 280px; border-top: 3px solid var(--red); background: #000; position: relative; }
-        #sidebar-map { width: 100%; height: 100%; border: none; display: none; }
-        
-        .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 25px; position: relative; }
-        .header { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 20px 30px; border-radius: 12px; border-bottom: 4px solid var(--red); margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .logo { font-size: 26px; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; }
-        .logo span { color: var(--red); }
-        
-        .action-bar { display: flex; gap: 8px; align-items: center; }
-        .btn { background: var(--border); color: #cbd5e1; border: none; padding: 10px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; transition: background 0.2s, color 0.2s; }
-        .btn:hover { background: #475569; color: white; }
-        .btn-whatsapp:hover { background: var(--whatsapp); color: white; }
-        .btn-toggle-active { background: var(--payroll); color: #000; }
-        .btn-blue-accent { background: var(--blue); color: white; }
+        .week-selector { background: #333; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; z-index: 90; }
+        .menu-group { display: flex; gap: 8px; align-items: center; }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 25px; }
-        .stat-card { background: var(--card); padding: 15px; border-radius: 10px; border-left: 5px solid var(--border); }
-        .stat-card h3 { margin: 0; font-size: 9px; color: #94a3b8; text-transform: uppercase; }
-        .stat-card p { margin: 8px 0 0; font-size: 22px; font-weight: 800; }
+        .week-btn { padding: 8px 18px; border: none; background: #555; color: white; font-weight: bold; cursor: pointer; border-radius: 4px; transition: 0.3s; font-size: 0.8rem; }
+        .week-btn:hover { background: #777; }
+        .week-btn.active { background: var(--frost-red); }
+        .week-btn.drag-over { background: var(--whatsapp-green) !important; transform: scale(1.05); }
         
-        .table-container { background: var(--card); border-radius: 12px; overflow-x: auto; border: 1px solid var(--border); }
-        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
-        th { padding: 18px; font-size: 11px; text-transform: uppercase; color: #94a3b8; border-bottom: 2px solid var(--border); text-align: left; }
-        td { padding: 16px 18px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        /* Themed Buttons */
+        .nav-blue { background: var(--frost-blue); }
+        .nav-orange { background: var(--frost-orange); }
+
+        main { display: flex; flex-grow: 1; overflow: hidden; position: relative; width: 100%; }
+
+        #unassigned-sidebar { width: var(--sidebar-width); background: #eee; border-right: 2px solid #ddd; display: flex; flex-direction: column; transition: margin-left 0.3s ease; margin-left: calc(-1 * var(--sidebar-width)); flex-shrink: 0; z-index: 80; }
+        #unassigned-sidebar.open { margin-left: 0; }
+        body:not(.day-mode) #unassigned-sidebar { background: #1e1e1e; border-color: #333; }
         
-        .driver-name { cursor: pointer; color: var(--blue); font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
-        .badge { padding: 5px 10px; border-radius: 4px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
-        .badge-active { background: var(--active); color: white; }
-        .map-link { color: var(--blue); cursor: pointer; font-weight: 800; font-size: 11px; }
+        .sidebar-header { background: #ddd; padding: 10px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        body:not(.day-mode) .sidebar-header { background: #333; color: white; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #pool-container { flex-grow: 1; overflow-y: auto; padding: 10px; background: #e2e2e2; border: 2px dashed #bbb; margin: 10px; border-radius: 6px; min-height: 100px; }
+        body:not(.day-mode) #pool-container { background: #2a2a2a; border-color: #444; }
 
-        #manual-modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.9); }
-        .modal-content { background: var(--card); margin: 8% auto; padding: 30px; border-radius: 12px; width: 400px; border: 1px solid var(--border); }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: white; border-radius: 5px; box-sizing: border-box; }
-        .modal-btn-save { background: var(--red) !important; color: white !important; }
+        #content-area { flex-grow: 1; overflow: hidden; padding: 10px; }
+        #planner-board, #invoicing-view { background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); height: 100%; overflow: auto; }
+        body:not(.day-mode) #planner-board, body:not(.day-mode) #invoicing-view { background: #1e1e1e; }
+        
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; table-layout: fixed; }
+        th { background: var(--frost-black); color: white; border: 1px solid #444; padding: 12px 8px; font-size: 0.85rem; text-transform: uppercase; text-align: left; position: sticky; top: 0; z-index: 5; }
+        .driver-cell { background: #eee; font-weight: bold; width: 160px; padding: 10px; border-right: 3px solid var(--frost-red); font-size: 0.85rem; position: sticky; left: 0; z-index: 2; }
+        body:not(.day-mode) .driver-cell { background: #2a2a2a; color: white; }
+
+        .driver-weekly-total { font-size: 0.7rem; color: #666; background: #ddd; padding: 2px 6px; border-radius: 4px; display: block; margin-top: 4px; width: fit-content; }
+        body:not(.day-mode) .driver-weekly-total { background: #444; color: #bbb; }
+
+        td { border: 1px solid var(--border-color); min-height: 120px; vertical-align: top; padding: 6px; }
+        body:not(.day-mode) td { border-color: #333; }
+
+        /* Job Cards */
+        .job-card { background: white; border-left: 4px solid var(--frost-red); padding: 8px; margin-bottom: 6px; border-radius: 3px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); cursor: grab; font-size: 0.72rem; color: #000; position: relative; }
+        .completed-card { background: #e0e0e0 !important; border-left: 4px solid #888 !important; opacity: 0.7; cursor: default !important; }
+        .completed-card .action-btn:not(.delete-btn) { display: none !important; }
+        
+        .card-row-1 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .card-actions { display: flex; gap: 6px; align-items: center; }
+        .action-btn { color: #888; cursor: pointer; font-size: 1.1rem; line-height: 1; transition: 0.2s; }
+        .action-btn:hover { color: var(--frost-red); }
+        .card-body { display: none; margin-top: 5px; border-top: 1px solid #eee; padding-top: 5px; }
+        .expanded .card-body { display: block; }
+
+        .vehicle-tag { background: var(--frost-blue); color: white; padding: 1px 5px; border-radius: 3px; font-size: 0.65rem; font-weight: bold; }
+        .price-tag { background: var(--price-green); color: white; padding: 1px 5px; border-radius: 3px; font-size: 0.65rem; font-weight: bold; }
+
+        .invoice-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .invoice-table th { background: #f8f8f8; color: #333; border: 1px solid #ddd; padding: 12px; font-size: 0.8rem; }
+        .invoice-table td { border-bottom: 1px solid #eee; padding: 12px; font-size: 0.85rem; }
+        body:not(.day-mode) .invoice-table th { background: #333; color: #fff; border-color: #444; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 400px; max-height: 85vh; overflow-y: auto; position: relative; color: #000; }
+        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; color: #999; }
+        .form-group { margin-bottom: 10px; }
+        label { display: block; font-size: 0.75rem; font-weight: bold; margin-bottom: 2px; }
+        input, textarea, select { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+        button#add-job-btn { width: 100%; background: var(--frost-red); color: white; border: none; padding: 10px; font-weight: bold; cursor: pointer; border-radius: 4px; margin-top: 10px; }
     </style>
 </head>
-<body>
+<body class="night-mode">
 
-    <aside class="sidebar">
-        <div class="sidebar-header">FTS DATA</div>
-        <div class="sidebar-content" id="sidebar-info">
-            <div id="default-sidebar">
-                <p><strong>Status:</strong> <span style="color:var(--active)">Operational</span></p>
-                <p style="margin-top:10px; color:var(--payroll)">Rate: £22.04/hr</p>
-            </div>
+<header>
+    <div class="logo-container"><img src="logo.png" alt="FROST"></div>
+    <div style="display:flex; gap:15px; align-items:center;">
+        <button class="week-btn" onclick="document.body.classList.toggle('day-mode')">Day/Night</button>
+        <div class="grand-total-box"><span class="grand-total-value" id="grand-total">£0.00</span></div>
+    </div>
+</header>
 
-            <div id="driver-profile" class="driver-profile-box">
-                <div class="profile-title" id="side-name">DRIVER</div>
-                <button id="side-copy-btn" class="btn btn-blue-accent" style="width:100%; margin-bottom:15px; justify-content:center;">Copy Full Log</button>
-                <span class="section-label">Weekly Shift Log</span>
-                <div class="log-text" id="side-log">...</div>
-                <span class="section-label">Additional Notes</span>
-                <div class="notes-text" id="side-notes">...</div>
-            </div>
-        </div>
-        <div class="map-dock"><iframe id="sidebar-map" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
-    </aside>
+<div class="week-selector">
+    <div class="menu-group">
+        <button class="week-btn nav-orange" id="btn-toggle-pool" onclick="toggleUnassigned()" ondragover="handleBtnDragOver(event, 'pool')" ondragleave="handleBtnDragLeave(event)" ondrop="handleBtnDrop(event, 'pool')">UNASSIGNED</button>
+        <button class="week-btn nav-orange" onclick="openModal('modal-add')">+ NEW JOB</button>
+    </div>
 
-    <div class="main-wrapper">
-        <div class="header">
-            <div class="logo">FTS <span>DATA CENTRE</span></div>
-            <div class="action-bar">
-                <button id="week-toggle" class="btn" onclick="toggleWeek()">📅 Previous Week</button>
-                <button class="btn" onclick="exportDataPDF()">📄 Export PDF</button>
-                <button class="btn btn-whatsapp" onclick="openWhatsApp()">💬 Group Message</button>
-                <a href="https://rich01623.github.io/Maintenance/" target="_blank" class="btn">🛠️ Vehicle Status</a>
-                <a href="https://docs.google.com/spreadsheets/d/1LJpZqCfRlNNNr494sCB5Ax1hFwFh4e7LzAIa0sTHoks/edit?usp=sharing" target="_blank" class="btn">⛽ Fuel</a>
-                <a href="https://docs.google.com/spreadsheets/d/1nZvQOplnru5hUCy4VRmm7bVHOwuJyzvV4CD3DyDGmO0/edit?usp=sharing" target="_blank" class="btn">🚛 Trailer</a>
-                <button class="btn" onclick="openModal()">➕ Manual Entry</button>
-                <button class="btn" onclick="loadData()">🔄 Refresh</button>
-            </div>
-        </div>
+    <div class="menu-group">
+        <button class="week-btn active" id="btn-w0" onclick="switchView(0)" ondragover="handleBtnDragOver(event, 0)" ondragleave="handleBtnDragLeave(event)" ondrop="handleBtnDrop(event, 'week')">WEEK 1</button>
+        <button class="week-btn" id="btn-w1" onclick="switchView(1)" ondragover="handleBtnDragOver(event, 1)" ondragleave="handleBtnDragLeave(event)" ondrop="handleBtnDrop(event, 'week')">WEEK 2</button>
+        <button class="week-btn" id="btn-w2" onclick="switchView(2)" ondragover="handleBtnDragOver(event, 2)" ondragleave="handleBtnDragLeave(event)" ondrop="handleBtnDrop(event, 'week')">WEEK 3</button>
+        <button class="week-btn" id="btn-w3" onclick="switchView(3)" ondragover="handleBtnDragOver(event, 3)" ondragleave="handleBtnDragLeave(event)" ondrop="handleBtnDrop(event, 'week')">WEEK 4</button>
+    </div>
 
-        <div class="stats-grid">
-            <div class="stat-card"><h3>Drivers</h3><p id="stat-total">0</p></div>
-            <div class="stat-card" style="border-left-color: var(--active)"><h3>On Duty</h3><p id="stat-active" style="color:var(--active)">0</p></div>
-            <div class="stat-card" style="border-left-color: var(--payroll)"><h3>Nights Out</h3><p id="stat-nights" style="color:var(--payroll)">0</p></div>
-            <div class="stat-card" style="border-left-color: var(--money)"><h3>Wage Bill</h3><p id="stat-wages" style="color:var(--money)">£0.00</p></div>
-        </div>
+    <div class="menu-group">
+        <button class="week-btn nav-blue" id="btn-invoice-nav" onclick="switchView('invoice')">INVOICES</button>
+        <button class="week-btn nav-blue" onclick="window.open('https://drive.google.com/drive/folders/173z9mkrCmqmEyEENeH__-qvdw1SFJl7w?usp=sharing', '_blank')">POD DRIVE</button>
+    </div>
+</div>
 
-        <div class="table-container">
+<main id="main-container">
+    <section id="unassigned-sidebar">
+        <div class="sidebar-header"><span>POOL</span><span style="cursor:pointer" onclick="toggleUnassigned()">×</span></div>
+        <div id="pool-container" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+    </section>
+
+    <div id="content-area">
+        <section id="planner-board">
             <table>
-                <thead>
-                    <tr><th>Driver</th><th>Status</th><th>Weekly Hours</th><th>15hr</th><th>Nights</th><th>Last Update</th><th>Vehicle Check</th><th>Location</th></tr>
-                </thead>
-                <tbody id="table-body"></tbody>
+                <thead><tr id="dynamic-date-headers"><th style="width:160px;">Driver</th></tr></thead>
+                <tbody id="planner-w0"></tbody>
+                <tbody id="planner-w1" style="display:none;"></tbody>
+                <tbody id="planner-w2" style="display:none;"></tbody>
+                <tbody id="planner-w3" style="display:none;"></tbody>
             </table>
-        </div>
-    </div>
+        </section>
 
-    <div id="manual-modal">
-        <div class="modal-content">
-            <h2 style="color:var(--red); text-transform:uppercase; font-size:16px; margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Manual Log Entry</h2>
-            <div class="form-group"><label>Driver</label><select id="manual-driver-select" onchange="toggleNewDriverInput()"></select></div>
-            <div id="new-driver-container" class="form-group" style="display:none;"><label>New Driver Name</label><input type="text" id="manual-driver-new"></div>
-            <div class="form-group"><label>Action</label><select id="manual-action"><option value="START">START</option><option value="END">END</option><option value="NIGHT OUT">NIGHT OUT</option></select></div>
-            <div class="form-group"><label>Date/Time</label><input type="datetime-local" id="manual-time"></div>
-            <div class="form-group"><label>Additional Notes</label><textarea id="manual-notes" rows="2" placeholder="Trailer wash, defect repairs, etc."></textarea></div>
-            <div style="display:flex; gap:10px; margin-top: 20px;"><button class="btn modal-btn-save" style="flex:1" onclick="submitManualEntry()">Save Log</button><button class="btn" onclick="closeModal()">Cancel</button></div>
-        </div>
+        <section id="invoicing-view" style="display:none; padding:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>Invoice Queue</h2>
+                <div style="display:flex; gap:10px;">
+                    <button class="week-btn nav-blue" onclick="generateBatchPDF()">GENERATE PDF</button>
+                    <button class="week-btn nav-orange" onclick="markAsBilled()">MARK AS BILLED</button>
+                </div>
+            </div>
+            <table class="invoice-table">
+                <thead><tr><th style="width:40px;"><input type="checkbox" onclick="toggleAllInvoices(this)"></th><th>Date</th><th>Customer</th><th>Route</th><th>Price</th></tr></thead>
+                <tbody id="invoice-list-body"></tbody>
+            </table>
+        </section>
     </div>
+</main>
 
-    <script>
-        const SUPABASE_URL = "https://mbudwnwxucluwgbkgbfx.supabase.co"; 
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1idWR3bnd4dWNsdXdnYmtnYmZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMDQwMjYsImV4cCI6MjA5MDc4MDAyNn0.xFv-FiQ894vdfJuQYWQyF4WzQXmlnmnKvz_c8nuzl5Q"; 
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzeQNNTsffmVMKNFhyJ9VQ-LVF_R58QMBTQQnC5enWwSrKaVHv9vC5r8_pryxAonfmXlg/exec";
-        const HOURLY_RATE = 22.04;
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+<div id="modal-add" class="modal-overlay" onclick="closeModalOnOutsideClick(event, 'modal-add')">
+    <div class="modal-content">
+        <span class="modal-close" onclick="closeModal('modal-add')">&times;</span>
+        <h2 id="modal-title">Job Details</h2>
+        <input type="hidden" id="edit-id">
+        <div class="form-group"><label>Customer Name</label><input type="text" id="cust-name"></div>
+        <div style="display:flex; gap:5px;"><div class="form-group" style="flex:1;"><label>Date</label><input type="date" id="job-date"></div><div class="form-group" style="flex:1;"><label>Time</label><input type="text" id="coll-time"></div></div>
+        <div class="form-group"><label>Pickup</label><input type="text" id="pickup"></div>
+        <div class="form-group"><label>Delivery</label><input type="text" id="delivery"></div>
+        <div style="display:flex; gap:5px;"><div class="form-group" style="flex:1;"><label>Trailer</label><input type="text" id="trailer-num"></div><div class="form-group" style="flex:1;"><label>Price (£)</label><input type="text" id="job-price"></div></div>
+        <div class="form-group"><label>Vehicle</label><select id="vehicle-type"><option value="Artic">Artic</option><option value="Rigid">Rigid</option><option value="7.5t">7.5t</option><option value="Van">Van</option></select></div>
+        <div class="form-group"><label>Notes</label><textarea id="job-notes" style="height:40px;"></textarea></div>
+        <button id="add-job-btn" onclick="saveJob()">Save Job</button>
+    </div>
+</div>
+
+<script>
+    const _URL = "https://tdrzytgiqvdulityqttr.supabase.co";
+    const _KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkcnp5dGdpcXZkdWxpdHlxdHRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTM5NTMsImV4cCI6MjA4ODcyOTk1M30.XN46i7u6STD-2afmN7-Jh1MltADGpEuWlLt_n7wknbA";
+    const sb = supabase.createClient(_URL, _KEY);
+    const podFolder = "https://drive.google.com/drive/folders/173z9mkrCmqmEyEENeH__-qvdw1SFJl7w?usp=sharing";
+
+    const fleet = [
+        { name: "Andy West", phone: "447734369810" }, { name: "Callum Lee", phone: "447359390140" },
+        { name: "Josh Harrison", phone: "447701238574" }, { name: "Lee Woodcock", phone: "447701238577" },
+        { name: "Marc Wickham", phone: "447701238576" }, { name: "Neil Woods", phone: "447701238567" },
+        { name: "Rhys Hill", phone: "447701238572" }, { name: "Richard Spence", phone: "447701238570" },
+        { name: "Roy Taylor", phone: "447701238558" }, { name: "Stuart Sleigh", phone: "447701238575" }
+    ];
+
+    let currentWeekOffset = 0;
+    let allJobsRaw = [];
+    let hoverTimer = null;
+
+    // Table Generation
+    ['planner-w0', 'planner-w1', 'planner-w2', 'planner-w3'].forEach((boardId) => {
+        const board = document.getElementById(boardId);
+        fleet.forEach((driver, i) => {
+            let row = document.createElement('tr');
+            row.innerHTML = `<td class="driver-cell"><span>${driver.name}</span><span class="driver-weekly-total" id="${boardId}-total-${i}">Week: £0</span></td>` + 
+                            Array(5).fill(0).map((_,j) => `<td id="${boardId}-dr${i}-s${j}" ondrop="drop(event)" ondragover="allowDrop(event)"></td>`).join('');
+            board.appendChild(row);
+        });
+    });
+
+    async function loadAll() {
+        document.querySelectorAll('.job-card').forEach(c => c.remove());
+        const { data: jobs } = await sb.from('quotes').select('*');
+        if (jobs) {
+            allJobsRaw = jobs;
+            jobs.forEach(q => {
+                if (q.status === 'billed') return; 
+                const card = createCardElement(q);
+                if (q.assigned_slot) {
+                    const slot = document.getElementById(q.assigned_slot);
+                    if (slot) slot.appendChild(card);
+                } else if (q.status !== 'completed') {
+                    document.getElementById('pool-container').appendChild(card);
+                }
+            });
+            if (document.getElementById('invoicing-view').style.display === 'block') renderInvoiceList();
+        }
+        updateCalculations();
+    }
+
+    function createCardElement(q) {
+        const isComp = q.status === 'completed';
+        const card = document.createElement('div');
+        card.className = "job-card" + (isComp ? " completed-card" : ""); 
+        card.id = q.id; 
+        card.draggable = !isComp;
+        card.ondragstart = (e) => e.dataTransfer.setData("text", e.target.id);
+        card.onclick = (e) => { if(!e.target.classList.contains('action-btn')) card.classList.toggle('expanded'); };
         
-        let isPreviousWeek = false;
-        let knownDrivers = [];
-        let currentReport = {};
+        card.innerHTML = `
+            <div class="card-row-1">
+                <div class="card-actions">
+                    <span class="action-btn" title="WhatsApp" onclick="sendWhatsApp(event, '${q.id}')">✆</span>
+                    <span class="action-btn" title="Edit" onclick="editJob(event, '${q.id}')">✎</span>
+                    <span class="action-btn" title="Duplicate" onclick="duplicateJob(event, '${q.id}')">❐</span>
+                    <span class="action-btn" title="View POD" onclick="openPOD(event, '${q.id}')">📎</span>
+                    <span class="action-btn" title="Complete" onclick="markPODReceived(event, '${q.id}')">✅</span>
+                </div>
+                <span class="action-btn delete-btn" onclick="deleteJob('${q.id}')">×</span>
+            </div>
+            <div style="font-weight:bold;">${q.customer_name}</div>
+            <div style="display:flex; gap:5px; margin-top:4px;">
+                <span class="vehicle-tag">${q.vehicle_type}</span>
+                <span class="price-tag">£<span class="data-price">${q.total_price}</span></span>
+            </div>
+            <div class="card-body"><div>${q.pickup} ➔ ${q.delivery}</div></div>`;
+        return card;
+    }
 
-        function openWhatsApp() {
-            const url = "https://web.whatsapp.com/"; 
-            window.open(url, '_blank');
+    function renderInvoiceList() {
+        const body = document.getElementById('invoice-list-body');
+        body.innerHTML = "";
+        allJobsRaw.filter(j => j.status === 'completed').forEach(j => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><input type="checkbox" class="inv-check" data-id="${j.id}"></td><td>${j.date}</td><td>${j.customer_name}</td><td>${j.pickup} - ${j.delivery}</td><td>£${parseFloat(j.total_price).toFixed(2)}</td>`;
+            body.appendChild(tr);
+        });
+    }
+
+    async function saveJob() {
+        const id = document.getElementById('edit-id').value;
+        const payload = {
+            customer_name: document.getElementById('cust-name').value,
+            date: document.getElementById('job-date').value,
+            time: document.getElementById('coll-time').value,
+            pickup: document.getElementById('pickup').value,
+            delivery: document.getElementById('delivery').value,
+            trailer_num: document.getElementById('trailer-num').value,
+            total_price: document.getElementById('job-price').value || "0",
+            vehicle_type: document.getElementById('vehicle-type').value,
+            notes: document.getElementById('job-notes').value
+        };
+        if(id) await sb.from('quotes').update(payload).eq('id', id);
+        else { payload.status = 'pending'; await sb.from('quotes').insert([payload]); }
+        loadAll(); closeModal('modal-add');
+    }
+
+    function editJob(e, id) {
+        e.stopPropagation();
+        const j = allJobsRaw.find(x => x.id == id);
+        document.getElementById('edit-id').value = id;
+        document.getElementById('cust-name').value = j.customer_name;
+        document.getElementById('job-date').value = j.date;
+        document.getElementById('coll-time').value = j.time;
+        document.getElementById('pickup').value = j.pickup;
+        document.getElementById('delivery').value = j.delivery;
+        document.getElementById('trailer-num').value = j.trailer_num;
+        document.getElementById('job-price').value = j.total_price;
+        document.getElementById('vehicle-type').value = j.vehicle_type;
+        document.getElementById('job-notes').value = j.notes || '';
+        openModal('modal-add');
+    }
+
+    async function duplicateJob(e, id) {
+        e.stopPropagation();
+        const j = {...allJobsRaw.find(x => x.id == id)};
+        delete j.id; j.status = 'pending'; j.assigned_slot = null;
+        await sb.from('quotes').insert([j]); loadAll();
+    }
+
+    function handleBtnDragOver(e, type) {
+        e.preventDefault(); e.currentTarget.classList.add('drag-over');
+        if (!hoverTimer) {
+            hoverTimer = setTimeout(() => {
+                if (type === 'pool') { if (!document.getElementById('unassigned-sidebar').classList.contains('open')) toggleUnassigned(); }
+                else if (typeof type === 'number') switchView(type);
+                hoverTimer = null;
+            }, 600);
         }
+    }
+    function handleBtnDragLeave(e) { e.currentTarget.classList.remove('drag-over'); clearTimeout(hoverTimer); hoverTimer = null; }
+    async function handleBtnDrop(e, type) {
+        e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+        const id = e.dataTransfer.getData("text");
+        if (type === 'pool') await sb.from('quotes').update({ status: 'pending', assigned_slot: null }).eq('id', id);
+        loadAll();
+    }
 
-        function toggleWeek() {
-            isPreviousWeek = !isPreviousWeek;
-            const btn = document.getElementById('week-toggle');
-            btn.innerText = isPreviousWeek ? "📅 Current Week" : "📅 Previous Week";
-            btn.classList.toggle('btn-toggle-active', isPreviousWeek);
-            loadData();
+    function sendWhatsApp(e, id) {
+        e.stopPropagation();
+        const j = allJobsRaw.find(x => x.id == id);
+        const dr = document.getElementById(id).closest('tr')?.querySelector('.driver-cell span')?.innerText;
+        const driver = fleet.find(d => d.name === dr);
+        if(!driver) return alert("Assign a driver first!");
+        const message = `FROST TRANSPORT\nJob: ${j.pickup} to ${j.delivery}\nUpload POD: ${podFolder}&jobid=${id}`;
+        window.open(`https://wa.me/${driver.phone}?text=${encodeURIComponent(message)}`, '_blank');
+    }
+
+    function openPOD(e, id) { e.stopPropagation(); window.open(`${podFolder}&jobid=${id}`, '_blank'); }
+    async function markPODReceived(e, id) { e.stopPropagation(); if(confirm(`Complete?`)) { await sb.from('quotes').update({ status: 'completed' }).eq('id', id); loadAll(); } }
+    async function deleteJob(id) { if(confirm("Delete?")) { await sb.from('quotes').delete().eq('id', id); loadAll(); } }
+
+    function switchView(view) {
+        document.querySelectorAll('.week-btn').forEach(b => b.classList.remove('active'));
+        if (view === 'invoice') {
+            document.getElementById('planner-board').style.display = 'none';
+            document.getElementById('invoicing-view').style.display = 'block';
+            document.getElementById('btn-invoice-nav').classList.add('active');
+            renderInvoiceList();
+        } else {
+            currentWeekOffset = view;
+            document.getElementById('planner-board').style.display = 'block';
+            document.getElementById('invoicing-view').style.display = 'none';
+            document.getElementById(`btn-w${view}`).classList.add('active');
+            [0,1,2,3].forEach(i => document.getElementById(`planner-w${i}`).style.display = (i === view ? 'table-row-group' : 'none'));
+            updateDateHeaders(view); updateCalculations();
         }
+    }
 
-        async function loadData() {
-            const tbody = document.getElementById('table-body');
-            tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; padding:40px;'>Syncing data...</td></tr>";
-            
-            try {
-                const vRes = await fetch(GOOGLE_SCRIPT_URL);
-                const vehicleData = await vRes.json();
+    function updateCalculations() {
+        let grand = 0;
+        const boardId = `planner-w${currentWeekOffset}`;
+        fleet.forEach((_, i) => {
+            let sum = 0;
+            document.querySelectorAll(`[id^="${boardId}-dr${i}-s"] .data-price`).forEach(p => sum += parseFloat(p.innerText) || 0);
+            const el = document.getElementById(`${boardId}-total-${i}`);
+            if(el) el.innerText = `Week: £${sum.toFixed(2)}`;
+            grand += sum;
+        });
+        document.getElementById('grand-total').innerText = "£" + grand.toFixed(2);
+    }
 
-                const now = new Date();
-                const day = now.getDay();
-                const diff = day === 0 ? -6 : 1 - day;
-                let startDate = new Date(now.setDate(now.getDate() + diff));
-                startDate.setHours(0,0,0,0);
-                
-                if (isPreviousWeek) startDate.setDate(startDate.getDate() - 7);
-                let endDate = new Date(startDate);
-                endDate.setDate(startDate.getDate() + 7);
+    function updateDateHeaders(offset) {
+        const headerRow = document.getElementById('dynamic-date-headers');
+        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+        let curr = new Date();
+        let first = curr.getDate() - curr.getDay() + 1 + (offset * 7);
+        let html = `<th style="width:160px;">Driver</th>`;
+        days.forEach((day, i) => {
+            let d = new Date(new Date().setDate(first + i));
+            html += `<th>${day} ${d.toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit'})}</th>`;
+        });
+        headerRow.innerHTML = html;
+    }
 
-                const { data: logs } = await _supabase.from('fleet_logs').select('*')
-                    .gte('created_at', startDate.toISOString())
-                    .lt('created_at', endDate.toISOString())
-                    .order('created_at', { ascending: true });
+    async function drop(ev) {
+        ev.preventDefault();
+        const id = ev.dataTransfer.getData("text");
+        const target = ev.currentTarget;
+        await sb.from('quotes').update({ status: target.tagName === 'TD' ? 'assigned' : 'pending', assigned_slot: target.tagName === 'TD' ? target.id : null }).eq('id', id);
+        loadAll();
+    }
 
-                const report = {};
-                let activeCount = 0, nightTotal = 0, totalMs = 0;
-                let driverSet = new Set();
+    function toggleUnassigned() { document.getElementById('unassigned-sidebar').classList.toggle('open'); }
+    function allowDrop(ev) { ev.preventDefault(); }
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; document.getElementById('edit-id').value = ''; }
+    function closeModalOnOutsideClick(e, id) { if(e.target.id === id) closeModal(id); }
+    function toggleAllInvoices(m) { document.querySelectorAll('.inv-check').forEach(cb => cb.checked = m.checked); }
 
-                logs.forEach(log => {
-                    const key = log.driver_name.toLowerCase().trim();
-                    driverSet.add(log.driver_name);
-                    if (!report[key]) report[key] = { name: log.driver_name, ms: 0, lastStart: null, shifts: [], status: 'OFFLINE', long: 0, nights: 0, lastTime: '', lastLoc: log.coordinates, nightDates: new Set(), allNotes: [] };
-                    
-                    const d = report[key];
-                    const dateObj = new Date(log.created_at);
-                    if (log.notes_text) d.allNotes.push(`[${dateObj.toLocaleDateString()}] ${log.notes_text}`);
-
-                    if (log.action_type === 'START') { d.lastStart = dateObj; d.status = 'ACTIVE'; }
-                    else if (log.action_type === 'END' && d.lastStart) {
-                        const shiftMs = dateObj - d.lastStart;
-                        d.ms += shiftMs; totalMs += shiftMs;
-                        // Trigger 15hr rule count if shift > 13 hours
-                        if (shiftMs > 46800000) d.long++;
-                        d.shifts.push({ 
-                            start: d.lastStart, end: dateObj, duration: (shiftMs/3600000).toFixed(1),
-                            dateKey: dateObj.toLocaleDateString(), dateLabel: dateObj.toLocaleDateString([], {weekday:'short'})
-                        });
-                        d.lastStart = null; d.status = 'OFFLINE';
-                    } else if (log.action_type === 'NIGHT OUT') { d.nights++; nightTotal++; d.nightDates.add(dateObj.toLocaleDateString()); }
-                    d.lastTime = dateObj.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-                    d.lastLoc = log.coordinates;
-                });
-
-                currentReport = report;
-                knownDrivers = Array.from(driverSet).sort();
-                tbody.innerHTML = "";
-
-                Object.keys(report).sort().forEach(key => {
-                    const d = report[key];
-                    const v = vehicleData[key] || { status: "No Check", detail: "No check found", time: "" };
-                    if (d.status === 'ACTIVE') activeCount++;
-                    
-                    const statusText = v.status || "No Check";
-                    const tooltipText = v.detail || v.time || "No further details";
-
-                    const shiftLogFormatted = d.shifts.map(s => {
-                        const hasN = d.nightDates.has(s.dateKey) ? " (N)" : "";
-                        return `${s.dateLabel}: ${s.start.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} - ${s.end.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} (${s.duration}h)${hasN}`;
-                    }).join('\n');
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><span class="driver-name">${d.name.toUpperCase()}</span></td>
-                        <td><span class="badge ${d.status==='ACTIVE'?'badge-active':''}" style="background:${d.status==='ACTIVE'?'':'#334155'}">${d.status}</span></td>
-                        <td>${(d.ms/3600000).toFixed(2)}h</td>
-                        <td>${d.long}/3</td>
-                        <td>${d.nights}</td>
-                        <td style="opacity:0.6">${d.lastTime}</td>
-                        <td title="${tooltipText}" style="color:${statusText.includes('⚠️')?'var(--red)':'#94a3b8'}; cursor:help;">${statusText}</td>
-                        <td><span class="map-link" onclick="updateDock('${d.lastLoc}')">📍 GPS</span></td>
-                    `;
-                    tr.querySelector('.driver-name').onclick = () => updateSidebar(d.name, shiftLogFormatted, d.allNotes.join('\n'));
-                    tbody.appendChild(tr);
-                });
-
-                document.getElementById('stat-total').innerText = Object.keys(report).length;
-                document.getElementById('stat-active').innerText = activeCount;
-                document.getElementById('stat-nights').innerText = nightTotal;
-                document.getElementById('stat-wages').innerText = `£${((totalMs/3600000)*HOURLY_RATE).toLocaleString()}`;
-            } catch (e) { tbody.innerHTML = "<tr><td colspan='8'>Sync Error</td></tr>"; }
-        }
-
-        function updateSidebar(name, log, notes) {
-            document.getElementById('default-sidebar').style.display = 'none';
-            document.getElementById('driver-profile').style.display = 'block';
-            document.getElementById('side-name').innerText = name.toUpperCase();
-            document.getElementById('side-log').innerText = log || "No shifts recorded for this period.";
-            document.getElementById('side-notes').innerText = notes || "No additional work notes logged.";
-            document.getElementById('side-copy-btn').onclick = async () => {
-                await navigator.clipboard.writeText(`LOG FOR ${name}:\n${log}\n\nADDITIONAL NOTES:\n${notes}`);
-                document.getElementById('side-copy-btn').innerText = "LOG COPIED!";
-                setTimeout(() => document.getElementById('side-copy-btn').innerText = "Copy Full Log", 2000);
-            };
-        }
-
-        async function exportDataPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'mm', 'a4');
-            const title = isPreviousWeek ? "FTS PAYROLL REPORT: PREVIOUS WEEK" : "FTS PAYROLL REPORT: CURRENT WEEK";
-            const rows = Object.values(currentReport).map(d => [d.name.toUpperCase(), (d.ms/3600000).toFixed(2), d.long, d.nights, '£' + ((d.ms/3600000)*HOURLY_RATE).toLocaleString()]);
-            doc.text(title, 14, 20);
-            doc.autoTable({ startY: 30, head: [['DRIVER', 'TOTAL HOURS', '15hr RULE', 'NIGHTS', 'EST. WAGES']], body: rows, headStyles: { fillColor: [230, 36, 17] } });
-            doc.save(`FTS_Payroll_${isPreviousWeek?'Prev':'Curr'}.pdf`);
-        }
-
-        function openModal() { 
-            const select = document.getElementById('manual-driver-select');
-            select.innerHTML = '<option value="">-- Select Driver --</option>';
-            knownDrivers.forEach(d => { select.innerHTML += `<option value="${d}">${d.toUpperCase()}</option>`; });
-            select.innerHTML += '<option value="NEW_DRIVER">Add New Driver...</option>';
-            document.getElementById('manual-modal').style.display = 'block'; 
-        }
-        function closeModal() { document.getElementById('manual-modal').style.display = 'none'; }
-        function toggleNewDriverInput() { document.getElementById('new-driver-container').style.display = (document.getElementById('manual-driver-select').value === 'NEW_DRIVER') ? 'block' : 'none'; }
-        function updateDock(coords) { const f = document.getElementById('sidebar-map'); f.style.display="block"; f.src = `https://www.google.com/maps?q=${coords}&t=k&z=15&output=embed`; }
-
-        async function submitManualEntry() {
-            const select = document.getElementById('manual-driver-select');
-            let name = select.value === 'NEW_DRIVER' ? document.getElementById('manual-driver-new').value : select.value;
-            if(!name || !document.getElementById('manual-time').value) return alert("Please fill in Driver and Time");
-            
-            await _supabase.from('fleet_logs').insert([{ 
-                driver_name: name.trim(), 
-                action_type: document.getElementById('manual-action').value, 
-                created_at: new Date(document.getElementById('manual-time').value).toISOString(), 
-                coordinates: "53.1424,-1.1396",
-                notes_text: document.getElementById('manual-notes').value.trim() || null
-            }]);
-            
-            closeModal(); 
-            loadData();
-        }
-
-        window.onload = loadData;
-        setInterval(loadData, 60000);
-    </script>
+    window.onload = () => { switchView(0); loadAll(); };
+    sb.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'quotes' }, () => loadAll()).subscribe();
+</script>
 </body>
 </html>
