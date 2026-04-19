@@ -13,7 +13,6 @@
             --frost-red: #c1272d;
             --frost-black: #1a1a1a;
             --frost-blue: #0056b3; 
-            --frost-orange: #e67e22; /* Replaced the mustard yellow */
             --light-grey: #f4f4f4;
             --border-color: #ccc;
             --whatsapp-green: #25D366;
@@ -22,9 +21,6 @@
         }
 
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: var(--light-grey); overflow: hidden; }
-        
-        /* Night Mode Logic */
-        body:not(.day-mode) { background: #121212; color: #eee; }
         body.day-mode { background: #fff; color: #000; }
         
         header { background: white; padding: 10px 20px; border-bottom: 3px solid var(--frost-red); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; z-index: 100; }
@@ -41,46 +37,32 @@
         .week-btn.active { background: var(--frost-red); }
         .week-btn.drag-over { background: var(--whatsapp-green) !important; transform: scale(1.05); }
         
-        /* Themed Buttons */
         .nav-blue { background: var(--frost-blue); }
-        .nav-orange { background: var(--frost-orange); }
+        .nav-orange { background: #e67e22; }
 
         main { display: flex; flex-grow: 1; overflow: hidden; position: relative; width: 100%; }
 
         #unassigned-sidebar { width: var(--sidebar-width); background: #eee; border-right: 2px solid #ddd; display: flex; flex-direction: column; transition: margin-left 0.3s ease; margin-left: calc(-1 * var(--sidebar-width)); flex-shrink: 0; z-index: 80; }
         #unassigned-sidebar.open { margin-left: 0; }
-        body:not(.day-mode) #unassigned-sidebar { background: #1e1e1e; border-color: #333; }
-        
         .sidebar-header { background: #ddd; padding: 10px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
-        body:not(.day-mode) .sidebar-header { background: #333; color: white; }
-
         #pool-container { flex-grow: 1; overflow-y: auto; padding: 10px; background: #e2e2e2; border: 2px dashed #bbb; margin: 10px; border-radius: 6px; min-height: 100px; }
-        body:not(.day-mode) #pool-container { background: #2a2a2a; border-color: #444; }
 
         #content-area { flex-grow: 1; overflow: hidden; padding: 10px; }
         #planner-board, #invoicing-view { background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); height: 100%; overflow: auto; }
-        body:not(.day-mode) #planner-board, body:not(.day-mode) #invoicing-view { background: #1e1e1e; }
         
         table { width: 100%; border-collapse: collapse; min-width: 1000px; table-layout: fixed; }
         th { background: var(--frost-black); color: white; border: 1px solid #444; padding: 12px 8px; font-size: 0.85rem; text-transform: uppercase; text-align: left; position: sticky; top: 0; z-index: 5; }
         .driver-cell { background: #eee; font-weight: bold; width: 160px; padding: 10px; border-right: 3px solid var(--frost-red); font-size: 0.85rem; position: sticky; left: 0; z-index: 2; }
-        body:not(.day-mode) .driver-cell { background: #2a2a2a; color: white; }
-
         .driver-weekly-total { font-size: 0.7rem; color: #666; background: #ddd; padding: 2px 6px; border-radius: 4px; display: block; margin-top: 4px; width: fit-content; }
-        body:not(.day-mode) .driver-weekly-total { background: #444; color: #bbb; }
-
         td { border: 1px solid var(--border-color); min-height: 120px; vertical-align: top; padding: 6px; }
-        body:not(.day-mode) td { border-color: #333; }
 
-        /* Job Cards */
-        .job-card { background: white; border-left: 4px solid var(--frost-red); padding: 8px; margin-bottom: 6px; border-radius: 3px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); cursor: grab; font-size: 0.72rem; color: #000; position: relative; }
+        .job-card { background: white; border-left: 4px solid var(--frost-red); padding: 8px; margin-bottom: 6px; border-radius: 3px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); cursor: grab; font-size: 0.72rem; position: relative; }
         .completed-card { background: #e0e0e0 !important; border-left: 4px solid #888 !important; opacity: 0.7; cursor: default !important; }
         .completed-card .action-btn:not(.delete-btn) { display: none !important; }
         
         .card-row-1 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .card-actions { display: flex; gap: 6px; align-items: center; }
-        .action-btn { color: #888; cursor: pointer; font-size: 1.1rem; line-height: 1; transition: 0.2s; }
-        .action-btn:hover { color: var(--frost-red); }
+        .action-btn { color: #888; cursor: pointer; font-size: 1.1rem; line-height: 1; }
         .card-body { display: none; margin-top: 5px; border-top: 1px solid #eee; padding-top: 5px; }
         .expanded .card-body { display: block; }
 
@@ -90,10 +72,9 @@
         .invoice-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         .invoice-table th { background: #f8f8f8; color: #333; border: 1px solid #ddd; padding: 12px; font-size: 0.8rem; }
         .invoice-table td { border-bottom: 1px solid #eee; padding: 12px; font-size: 0.85rem; }
-        body:not(.day-mode) .invoice-table th { background: #333; color: #fff; border-color: #444; }
 
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 400px; max-height: 85vh; overflow-y: auto; position: relative; color: #000; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 400px; max-height: 85vh; overflow-y: auto; position: relative; }
         .modal-close { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; color: #999; }
         .form-group { margin-bottom: 10px; }
         label { display: block; font-size: 0.75rem; font-weight: bold; margin-bottom: 2px; }
@@ -101,7 +82,7 @@
         button#add-job-btn { width: 100%; background: var(--frost-red); color: white; border: none; padding: 10px; font-weight: bold; cursor: pointer; border-radius: 4px; margin-top: 10px; }
     </style>
 </head>
-<body class="night-mode">
+<body>
 
 <header>
     <div class="logo-container"><img src="logo.png" alt="FROST"></div>
@@ -240,11 +221,11 @@
         card.innerHTML = `
             <div class="card-row-1">
                 <div class="card-actions">
-                    <span class="action-btn" title="WhatsApp" onclick="sendWhatsApp(event, '${q.id}')">✆</span>
-                    <span class="action-btn" title="Edit" onclick="editJob(event, '${q.id}')">✎</span>
-                    <span class="action-btn" title="Duplicate" onclick="duplicateJob(event, '${q.id}')">❐</span>
-                    <span class="action-btn" title="View POD" onclick="openPOD(event, '${q.id}')">📎</span>
-                    <span class="action-btn" title="Complete" onclick="markPODReceived(event, '${q.id}')">✅</span>
+                    <span class="action-btn" onclick="sendWhatsApp(event, '${q.id}')">✆</span>
+                    <span class="action-btn" onclick="editJob(event, '${q.id}')">✎</span>
+                    <span class="action-btn" onclick="duplicateJob(event, '${q.id}')">❐</span>
+                    <span class="action-btn" onclick="openPOD(event, '${q.id}')">📎</span>
+                    <span class="action-btn" onclick="markPODReceived(event, '${q.id}')">✅</span>
                 </div>
                 <span class="action-btn delete-btn" onclick="deleteJob('${q.id}')">×</span>
             </div>
@@ -262,7 +243,7 @@
         body.innerHTML = "";
         allJobsRaw.filter(j => j.status === 'completed').forEach(j => {
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td><input type="checkbox" class="inv-check" data-id="${j.id}"></td><td>${j.date}</td><td>${j.customer_name}</td><td>${j.pickup} - ${j.delivery}</td><td>£${parseFloat(j.total_price).toFixed(2)}</td>`;
+            tr.innerHTML = `<td><input type="checkbox" class="inv-check" data-id="${j.id}"></td><td>${j.date}</td><td>${j.customer_name}</td><td>${j.pickup} - ${j.delivery}</td><td>£${j.total_price}</td>`;
             body.appendChild(tr);
         });
     }
@@ -331,8 +312,8 @@
         const j = allJobsRaw.find(x => x.id == id);
         const dr = document.getElementById(id).closest('tr')?.querySelector('.driver-cell span')?.innerText;
         const driver = fleet.find(d => d.name === dr);
-        if(!driver) return alert("Assign a driver first!");
-        const message = `FROST TRANSPORT\nJob: ${j.pickup} to ${j.delivery}\nUpload POD: ${podFolder}&jobid=${id}`;
+        if(!driver) return alert("Assign a driver!");
+        const message = `FROST TRANSPORT\nJob: ${j.pickup} to ${j.delivery}\nUpload POD here: ${podFolder}&jobid=${id}`;
         window.open(`https://wa.me/${driver.phone}?text=${encodeURIComponent(message)}`, '_blank');
     }
 
