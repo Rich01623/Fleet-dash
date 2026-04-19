@@ -13,6 +13,7 @@
             --red: #E62411; --bg: #020617; --sidebar: #0f172a; --card: #1e293b; 
             --text: #f8fafc; --border: #334155; --active: #22c55e; 
             --payroll: #f59e0b; --money: #10b981; --blue: #3b82f6; 
+            --whatsapp: #25D366;
         }
 
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; color: var(--text); overflow: hidden; }
@@ -43,6 +44,7 @@
         .action-bar { display: flex; gap: 8px; align-items: center; }
         .btn { background: var(--border); color: #cbd5e1; border: none; padding: 10px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; transition: background 0.2s, color 0.2s; }
         .btn:hover { background: #475569; color: white; }
+        .btn-whatsapp:hover { background: var(--whatsapp); color: white; }
         .btn-toggle-active { background: var(--payroll); color: #000; }
         .btn-blue-accent { background: var(--blue); color: white; }
 
@@ -99,6 +101,8 @@
             <div class="action-bar">
                 <button id="week-toggle" class="btn" onclick="toggleWeek()">📅 Previous Week</button>
                 <button class="btn" onclick="exportDataPDF()">📄 Export PDF</button>
+                <button class="btn btn-whatsapp" onclick="openWhatsApp()">💬 Group Message</button>
+                <a href="https://rich01623.github.io/Maintenance/" target="_blank" class="btn">🛠️ Vehicle Status</a>
                 <a href="https://docs.google.com/spreadsheets/d/1LJpZqCfRlNNNr494sCB5Ax1hFwFh4e7LzAIa0sTHoks/edit?usp=sharing" target="_blank" class="btn">⛽ Fuel</a>
                 <a href="https://docs.google.com/spreadsheets/d/1nZvQOplnru5hUCy4VRmm7bVHOwuJyzvV4CD3DyDGmO0/edit?usp=sharing" target="_blank" class="btn">🚛 Trailer</a>
                 <button class="btn" onclick="openModal()">➕ Manual Entry</button>
@@ -145,6 +149,11 @@
         let isPreviousWeek = false;
         let knownDrivers = [];
         let currentReport = {};
+
+        function openWhatsApp() {
+            const url = "https://web.whatsapp.com/"; 
+            window.open(url, '_blank');
+        }
 
         function toggleWeek() {
             isPreviousWeek = !isPreviousWeek;
@@ -194,7 +203,8 @@
                     else if (log.action_type === 'END' && d.lastStart) {
                         const shiftMs = dateObj - d.lastStart;
                         d.ms += shiftMs; totalMs += shiftMs;
-                        if (shiftMs > 54000000) d.long++;
+                        // Trigger 15hr rule count if shift > 13 hours
+                        if (shiftMs > 46800000) d.long++;
                         d.shifts.push({ 
                             start: d.lastStart, end: dateObj, duration: (shiftMs/3600000).toFixed(1),
                             dateKey: dateObj.toLocaleDateString(), dateLabel: dateObj.toLocaleDateString([], {weekday:'short'})
@@ -211,11 +221,9 @@
 
                 Object.keys(report).sort().forEach(key => {
                     const d = report[key];
-                    // MATCHING YOUR GOOGLE SCRIPT OUTPUT
                     const v = vehicleData[key] || { status: "No Check", detail: "No check found", time: "" };
                     if (d.status === 'ACTIVE') activeCount++;
                     
-                    // Fixed: Using 'v.detail' as defined in your Google Script
                     const statusText = v.status || "No Check";
                     const tooltipText = v.detail || v.time || "No further details";
 
