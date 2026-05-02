@@ -123,12 +123,13 @@
             <div class="stat-card" style="border-left-color: var(--active)"><h3>On Duty</h3><p id="stat-active" style="color:var(--active)">0</p></div>
             <div class="stat-card" style="border-left-color: var(--payroll)"><h3>Nights Out</h3><p id="stat-nights" style="color:var(--payroll)">0</p></div>
             <div class="stat-card" style="border-left-color: var(--money)"><h3>Wage Bill</h3><p id="stat-wages" style="color:var(--money)">£0.00</p></div>
+            <div class="stat-card" style="border-left-color: var(--blue)"><h3>Fuel Total</h3><p id="stat-fuel" style="color:var(--blue)">0L</p></div>
         </div>
 
         <div class="table-container">
             <table>
                 <thead>
-                    <tr><th>Driver</th><th>Status</th><th>Weekly Hours</th><th>15hr</th><th>Nights</th><th>Last Update</th><th>Vehicle Check</th><th>Trailer Check</th><th>Location</th></tr>
+                    <tr><th>Driver</th><th>Status</th><th>Weekly Hours</th><th>15hr</th><th>Nights</th><th>Last Update</th><th>Vehicle Reg</th><th>Trailer No</th><th>Location</th></tr>
                 </thead>
                 <tbody id="table-body"></tbody>
             </table>
@@ -167,12 +168,11 @@
             loadData();
         }
 
-        // Updated Helper for Logic Priority
         function getCheckColor(status) {
             const s = (status || "").toLowerCase();
-            if (s.includes("nil")) return "var(--active)"; // Green (Priority 1)
-            if (s.includes("no check")) return "var(--yellow)"; // Yellow (Priority 2)
-            if (s.includes("defect") || s.includes("⚠️")) return "var(--red)"; // Red (Priority 3)
+            if (s.includes("nil")) return "var(--active)"; 
+            if (s.includes("no check")) return "var(--yellow)"; 
+            if (s.includes("defect") || s.includes("⚠️")) return "var(--red)"; 
             return "#cbd5e1";
         }
 
@@ -181,9 +181,22 @@
             tbody.innerHTML = "<tr><td colspan='9' style='text-align:center; padding:40px;'>Syncing data...</td></tr>";
             
             try {
-                const [vResponse, tResponse] = await Promise.all([
+                // Determine Date Range first to apply to Fuel
+                const now = new Date();
+                const day = now.getDay();
+                const diff = day === 0 ? -6 : 1 - day;
+                let startDate = new Date(now.setDate(now.getDate() + diff));
+                startDate.setHours(0,0,0,0);
+                if (isPreviousWeek) startDate.setDate(startDate.getDate() - 7);
+                let endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + 7);
+
+                const [vResponse, tResponse, fResponse] = await Promise.all([
                     _supabase.from('daily_vehicle_checks').select('*').order('created_at', { ascending: false }),
-                    _supabase.from('daily_trailer_checks').select('*').order('created_at', { ascending: false })
+                    _supabase.from('daily_trailer_checks').select('*').order('created_at', { ascending: false }),
+                    _supabase.from('fuel_logs').select('litres')
+                        .gte('created_at', startDate.toISOString())
+                        .lt('created_at', endDate.toISOString())
                 ]);
 
                 const vehicleData = {};
@@ -193,7 +206,7 @@
                         if (key && !vehicleData[key]) {
                             vehicleData[key] = {
                                 status: check.condition_status || "No Check",
-                                reg: check.registration || "N/A",
+                                reg: check.registration || "No Check",
                                 miles: check.mileage || "0",
                                 detail: check.defect_details || "No defects reported.",
                                 time: new Date(check.created_at).toLocaleString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})
@@ -209,7 +222,7 @@
                         if (key && !trailerData[key]) {
                             trailerData[key] = {
                                 status: check.condition_status || "No Check",
-                                trailer_no: check.trailer_number || "N/A",
+                                trailer_no: check.trailer_number || "No Check",
                                 detail: check.defect_details || "No defects reported.",
                                 trailer_notes: check.notes || "",
                                 time: new Date(check.created_at).toLocaleString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})
@@ -218,14 +231,10 @@
                     });
                 }
 
-                const now = new Date();
-                const day = now.getDay();
-                const diff = day === 0 ? -6 : 1 - day;
-                let startDate = new Date(now.setDate(now.getDate() + diff));
-                startDate.setHours(0,0,0,0);
-                if (isPreviousWeek) startDate.setDate(startDate.getDate() - 7);
-                let endDate = new Date(startDate);
-                endDate.setDate(startDate.getDate() + 7);
+                let totalLitres = 0;
+                if (fResponse.data) {
+                    totalLitres = fResponse.data.reduce((acc, curr) => acc + (parseFloat(curr.litres) || 0), 0);
+                }
 
                 const { data: logs, error: lError } = await _supabase.from('fleet_logs').select('*')
                     .gte('created_at', startDate.toISOString())
@@ -268,13 +277,16 @@
 
                 Object.keys(report).sort().forEach(key => {
                     const d = report[key];
-                    const v = vehicleData[key] || { status: "No Check", detail: "N/A", reg: "N/A", miles: "0", time: "N/A" };
-                    const t = trailerData[key] || { status: "No Check", detail: "N/A", trailer_no: "N/A", trailer_notes: "", time: "N/A" };
+                    const v = vehicleData[key] || { status: "No Check", detail: "N/A", reg: "No Check", miles: "0", time: "N/A" };
+                    const t = trailerData[key] || { status: "No Check", detail: "N/A", trailer_no: "No Check", trailer_notes: "", time: "N/A" };
                     
                     if (d.status === 'ACTIVE') activeCount++;
                     
                     const vColor = getCheckColor(v.status);
                     const tColor = getCheckColor(t.status);
+
+                    const vDisplayText = (v.status.toLowerCase() === "no check") ? "No Check" : v.reg.toUpperCase();
+                    const tDisplayText = (t.status.toLowerCase() === "no check") ? "No Check" : t.trailer_no.toUpperCase();
 
                     const shiftLogFormatted = d.shifts.map(s => {
                         const hasN = d.nightDates.has(s.dateKey) ? " (N)" : "";
@@ -289,8 +301,8 @@
                         <td>${d.long}/3</td>
                         <td>${d.nights}</td>
                         <td style="opacity:0.6">${d.lastTime}</td>
-                        <td><span class="v-check check-link" style="color:${vColor}">${v.status}</span></td>
-                        <td><span class="t-check check-link" style="color:${tColor}">${t.status}</span></td>
+                        <td><span class="v-check check-link" style="color:${vColor}">${vDisplayText}</span></td>
+                        <td><span class="t-check check-link" style="color:${tColor}">${tDisplayText}</span></td>
                         <td><span class="map-link" onclick="updateDock('${d.lastLoc}')">📍 GPS</span></td>
                     `;
 
@@ -306,6 +318,7 @@
                 document.getElementById('stat-active').innerText = activeCount;
                 document.getElementById('stat-nights').innerText = nightTotal;
                 document.getElementById('stat-wages').innerText = `£${((totalMs/3600000)*HOURLY_RATE).toLocaleString()}`;
+                document.getElementById('stat-fuel').innerText = `${totalLitres.toLocaleString()}L`;
             } catch (e) { 
                 console.error(e);
                 tbody.innerHTML = "<tr><td colspan='9' style='text-align:center; padding:40px; color:var(--red)'>Fatal Sync Error</td></tr>"; 
@@ -319,7 +332,6 @@
             document.getElementById('side-log').innerText = log || "No shifts recorded.";
             document.getElementById('side-notes').innerText = notes || "No notes.";
 
-            // Vehicle Display Sidebar
             const vColor = getCheckColor(vehicle.status);
             let vClass = 'report-box';
             if(vColor === "var(--red)") vClass += ' alert-red';
@@ -336,7 +348,6 @@
                 <div style="font-size:9px; opacity:0.5; margin-top:8px; text-align:right;">${vehicle.time}</div>
             `;
 
-            // Trailer Display Sidebar
             const tColor = getCheckColor(trailer.status);
             let tClass = 'report-box';
             if(tColor === "var(--red)") tClass += ' alert-red';
