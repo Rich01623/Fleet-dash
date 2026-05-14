@@ -23,7 +23,7 @@
         .sidebar-content { flex: 1; padding: 20px; font-size: 13px; color: #94a3b8; overflow-y: auto; line-height: 1.6; }
         
         .driver-profile-box { display: none; margin-bottom: 20px; animation: fadeIn 0.3s; }
-        .profile-title { color: var(--text); font-size: 18px; font-weight: 800; border-left: 4px solid var(--red); padding-left: 10px; margin-bottom: 15px; }
+        .profile-title { color: var(--text); font-size: 18px; font-weight: 800; border-left: 4px solid var(--red); padding-left: 10px; margin-bottom: 0; }
         .section-label { color: var(--red); font-weight: 900; font-size: 10px; text-transform: uppercase; margin-top: 20px; display: block; letter-spacing: 1px; }
         
         .log-text { background: #000; padding: 12px; border-radius: 5px; color: #f1f5f9; font-family: 'Segoe UI', monospace; font-size: 13px; white-space: pre-wrap; margin-top: 8px; border: 1px solid #1e293b; line-height: 1.5; }
@@ -66,11 +66,14 @@
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        #manual-modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.9); }
+        #manual-modal, #fuel-modal, #fuel-card-modal, #trailer-modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.9); }
         .modal-content { background: var(--card); margin: 8% auto; padding: 30px; border-radius: 12px; width: 400px; border: 1px solid var(--border); }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: white; border-radius: 5px; box-sizing: border-box; }
+        
+        /* Specific input styling for disabled state in the edit modal */
+        input:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -81,10 +84,21 @@
             <div id="default-sidebar">
                 <p><strong>Status:</strong> <span style="color:var(--active)">Operational</span></p>
                 <p style="margin-top:10px; color:var(--payroll)">Rate: £22.04/hr</p>
+
+                <!-- NEW FUEL CARDS SECTION IN SIDEBAR -->
+                <span class="section-label" style="margin-top:40px;">Active Fuel Cards</span>
+                <div id="sidebar-fuel-cards-list">
+                    <div class="notes-text">Loading cards...</div>
+                </div>
             </div>
 
             <div id="driver-profile" class="driver-profile-box">
-                <div class="profile-title" id="side-name">DRIVER</div>
+                <!-- BACK BUTTON IN THIS FLEX CONTAINER -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div class="profile-title" id="side-name">DRIVER</div>
+                    <button class="btn" onclick="closeDriverProfile()" style="background: var(--border); color: #cbd5e1;">🔙 BACK</button>
+                </div>
+
                 <button id="side-copy-btn" class="btn" style="width:100%; margin-bottom:15px; justify-content:center; background: var(--blue); color:white;">Copy Full Log</button>
                 
                 <span class="section-label">Weekly Shift Log</span>
@@ -111,8 +125,9 @@
                 <button class="btn" onclick="exportDataPDF()">📄 Export PDF</button>
                 <button class="btn btn-whatsapp" onclick="openWhatsApp()">💬 Group Message</button>
                 <a href="https://rich01623.github.io/Maintenance/" target="_blank" class="btn">🛠️ Vehicle Status</a>
-                <a href="https://docs.google.com/spreadsheets/d/1LJpZqCfRlNNNr494sCB5Ax1hFwFh4e7LzAIa0sTHoks/edit?usp=sharing" target="_blank" class="btn">⛽ Fuel</a>
-                <a href="https://docs.google.com/spreadsheets/d/1nZvQOplnru5hUCy4VRmm7bVHOwuJyzvV4CD3DyDGmO0/edit?usp=sharing" target="_blank" class="btn">🚛 Trailer</a>
+                <button class="btn" onclick="openFuelCardModal()">💳 Fuel Cards</button>
+                <button class="btn" onclick="openFuelModal()">⛽ Fuel Logs</button>
+                <button class="btn" onclick="openTrailerModal()">🚛 Trailer Logs</button>
                 <button class="btn" onclick="openModal()">➕ Manual Entry</button>
                 <button class="btn" onclick="loadData()">🔄 Refresh</button>
             </div>
@@ -136,6 +151,7 @@
         </div>
     </div>
 
+    <!-- Manual Log Modal -->
     <div id="manual-modal">
         <div class="modal-content">
             <h2 style="color:var(--red); text-transform:uppercase; font-size:16px; margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Manual Log Entry</h2>
@@ -148,6 +164,74 @@
         </div>
     </div>
 
+    <!-- Fuel Cards Modal -->
+    <div id="fuel-card-modal">
+        <div class="modal-content">
+            <h2 id="fc-modal-title" style="color:var(--red); text-transform:uppercase; font-size:16px; margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Add Fuel Card</h2>
+            <div class="form-group"><label>Fuel Card Company</label><input type="text" id="fc-company" placeholder="e.g. UK Fuels"></div>
+            <div class="form-group"><label>Price Per Litre (£)</label><input type="number" step="0.001" id="fc-price" placeholder="e.g. 1.25"></div>
+            <div style="display:flex; gap:10px; margin-top: 20px;">
+                <button class="btn" style="flex:1; background:var(--money); color:white;" onclick="submitFuelCard()">Save Card</button>
+                <button class="btn" onclick="closeFuelCardModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fuel Logs Modal -->
+    <div id="fuel-modal">
+        <div class="modal-content" style="width: 1000px; max-width: 95%;">
+            <h2 style="color:var(--red); text-transform:uppercase; font-size:16px; margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                Weekly Fuel Logs
+                <button class="btn" onclick="closeFuelModal()" style="background: transparent; padding: 0; font-size: 16px;">❌</button>
+            </h2>
+            <div class="table-container" style="max-height: 60vh; overflow-y: auto;">
+                <table style="min-width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Driver Name</th>
+                            <th>Vehicle Reg</th>
+                            <th>Litres</th>
+                            <th>Cost (£)</th>
+                            <th>Location</th>
+                            <th>Fuel Card Used</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fuel-table-body">
+                        <tr><td colspan="7" style="text-align:center; padding: 20px;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trailer Logs Modal -->
+    <div id="trailer-modal">
+        <div class="modal-content" style="width: 1000px; max-width: 95%;">
+            <h2 style="color:var(--red); text-transform:uppercase; font-size:16px; margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                Weekly Trailer Logs
+                <button class="btn" onclick="closeTrailerModal()" style="background: transparent; padding: 0; font-size: 16px;">❌</button>
+            </h2>
+            <div class="table-container" style="max-height: 60vh; overflow-y: auto;">
+                <table style="min-width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Driver Name</th>
+                            <th>Trailer No</th>
+                            <th>Status</th>
+                            <th>Defect Details</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trailer-table-body">
+                        <tr><td colspan="6" style="text-align:center; padding: 20px;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = "https://mbudwnwxucluwgbkgbfx.supabase.co"; 
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1idWR3bnd4dWNsdXdnYmtnYmZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMDQwMjYsImV4cCI6MjA5MDc4MDAyNn0.xFv-FiQ894vdfJuQYWQyF4WzQXmlnmnKvz_c8nuzl5Q"; 
@@ -157,6 +241,9 @@
         let isPreviousWeek = false;
         let knownDrivers = [];
         let currentReport = {};
+        
+        // New global state for fuel card prices
+        let activeFuelCards = {}; 
 
         function openWhatsApp() { window.open("https://web.whatsapp.com/", '_blank'); }
 
@@ -176,12 +263,94 @@
             return "#cbd5e1";
         }
 
+        /* --- FUNCTION: CLOSE DRIVER PROFILE --- */
+        function closeDriverProfile() {
+            document.getElementById('driver-profile').style.display = 'none';
+            document.getElementById('default-sidebar').style.display = 'block';
+            document.getElementById('sidebar-map').style.display = 'none';
+        }
+
+        /* --- FUEL CARDS FUNCTIONS --- */
+        async function loadFuelCards() {
+            try {
+                const { data, error } = await _supabase.from('fuel_cards').select('*');
+                if (error) throw error;
+                
+                activeFuelCards = {};
+                data.forEach(card => {
+                    activeFuelCards[card.company] = parseFloat(card.price);
+                });
+                
+                renderFuelCardsSidebar();
+            } catch (e) {
+                console.error("Error loading fuel cards:", e);
+                document.getElementById('sidebar-fuel-cards-list').innerHTML = '<div class="notes-text" style="color:var(--red)">Failed to load cards.</div>';
+            }
+        }
+
+        function renderFuelCardsSidebar() {
+            const container = document.getElementById('sidebar-fuel-cards-list');
+            if (Object.keys(activeFuelCards).length === 0) {
+                container.innerHTML = '<div class="notes-text">No fuel cards added.</div>';
+                return;
+            }
+
+            container.innerHTML = Object.keys(activeFuelCards).map(company => `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#1e293b; padding:10px; margin-top:8px; border-radius:5px; border:1px solid var(--border);">
+                    <div>
+                        <div style="font-weight:bold; font-size:12px; color:var(--text);">${company.toUpperCase()}</div>
+                        <div style="font-size:12px; color:var(--money); font-weight:800; margin-top:2px;">£${activeFuelCards[company].toFixed(3)} <span style="font-size:10px; color:#94a3b8; font-weight:normal;">/ Litre</span></div>
+                    </div>
+                    <button class="btn" style="padding:4px 8px; font-size:9px;" onclick="openFuelCardModal('${company}', ${activeFuelCards[company]})">EDIT</button>
+                </div>
+            `).join('');
+        }
+
+        function openFuelCardModal(company = '', price = '') {
+            document.getElementById('fc-modal-title').innerText = company ? 'Edit Fuel Card Price' : 'Add Fuel Card';
+            const companyInput = document.getElementById('fc-company');
+            companyInput.value = company;
+            companyInput.disabled = !!company; // Disable changing the name if we are just editing the price
+            
+            document.getElementById('fc-price').value = price;
+            document.getElementById('fuel-card-modal').style.display = 'block';
+        }
+
+        function closeFuelCardModal() {
+            document.getElementById('fuel-card-modal').style.display = 'none';
+        }
+
+        async function submitFuelCard() {
+            const company = document.getElementById('fc-company').value.trim();
+            const price = parseFloat(document.getElementById('fc-price').value);
+
+            if (!company || isNaN(price)) {
+                alert("Please enter a valid company name and price.");
+                return;
+            }
+
+            const { error } = await _supabase.from('fuel_cards').upsert([
+                { company: company, price: price }
+            ], { onConflict: 'company' });
+
+            if (error) {
+                console.error(error);
+                alert("Error saving fuel card. Ensure 'company' is set as the Primary Key in your Supabase table.");
+                return;
+            }
+
+            closeFuelCardModal();
+            loadFuelCards(); 
+        }
+
+        /* --- CORE DATA SYNC --- */
         async function loadData() {
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = "<tr><td colspan='9' style='text-align:center; padding:40px;'>Syncing data...</td></tr>";
             
+            await loadFuelCards(); 
+
             try {
-                // Determine Date Range first to apply to Fuel
                 const now = new Date();
                 const day = now.getDay();
                 const diff = day === 0 ? -6 : 1 - day;
@@ -409,6 +578,127 @@
                 notes_text: document.getElementById('manual-notes').value.trim() || null
             }]);
             closeModal(); loadData();
+        }
+
+        /* --- WEEKLY FUEL LOGS MODAL FUNCTIONS --- */
+        function closeFuelModal() {
+            document.getElementById('fuel-modal').style.display = 'none';
+        }
+
+        async function openFuelModal() {
+            document.getElementById('fuel-modal').style.display = 'block';
+            const tbody = document.getElementById('fuel-table-body');
+            tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; padding:40px;'>Loading fuel logs...</td></tr>";
+
+            const now = new Date();
+            const day = now.getDay();
+            const diff = day === 0 ? -6 : 1 - day;
+            let startDate = new Date(now.setDate(now.getDate() + diff));
+            startDate.setHours(0,0,0,0);
+            if (isPreviousWeek) startDate.setDate(startDate.getDate() - 7);
+            let endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 7);
+
+            try {
+                const { data, error } = await _supabase
+                    .from('fuel_logs')
+                    .select('created_at, driver_name, vehicle_reg, litres, coordinates, fuel_card')
+                    .gte('created_at', startDate.toISOString())
+                    .lt('created_at', endDate.toISOString())
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; padding:40px;'>No fuel logs recorded for this week.</td></tr>";
+                    return;
+                }
+
+                tbody.innerHTML = data.map(log => {
+                    const dateObj = new Date(log.created_at);
+                    const formattedDate = dateObj.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: '2-digit' }) + ' ' + 
+                                          dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    
+                    const litresNum = parseFloat(log.litres) || 0;
+                    const pricePerLitre = activeFuelCards[log.fuel_card] || 0;
+                    const totalCost = (litresNum * pricePerLitre).toFixed(2);
+                    
+                    return `
+                        <tr>
+                            <td style="font-weight: 700;">${formattedDate}</td>
+                            <td><span class="driver-name" style="text-decoration: none; cursor: default;">${(log.driver_name || 'UNKNOWN').toUpperCase()}</span></td>
+                            <td><span class="badge" style="background: var(--border); color: white;">${(log.vehicle_reg || 'N/A').toUpperCase()}</span></td>
+                            <td style="color: var(--blue); font-weight: 800;">${litresNum} L</td>
+                            <td style="color: var(--money); font-weight: 800;">£${totalCost}</td>
+                            <td><span class="map-link" onclick="updateDock('${log.coordinates || ''}'); closeFuelModal();">📍 GPS</span></td>
+                            <td>${log.fuel_card || 'N/A'}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; padding:40px; color:var(--red)'>Error loading fuel data.</td></tr>";
+            }
+        }
+
+        /* --- WEEKLY TRAILER LOGS MODAL FUNCTIONS --- */
+        function closeTrailerModal() {
+            document.getElementById('trailer-modal').style.display = 'none';
+        }
+
+        async function openTrailerModal() {
+            document.getElementById('trailer-modal').style.display = 'block';
+            const tbody = document.getElementById('trailer-table-body');
+            tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:40px;'>Loading trailer logs...</td></tr>";
+
+            const now = new Date();
+            const day = now.getDay();
+            const diff = day === 0 ? -6 : 1 - day;
+            let startDate = new Date(now.setDate(now.getDate() + diff));
+            startDate.setHours(0,0,0,0);
+            if (isPreviousWeek) startDate.setDate(startDate.getDate() - 7);
+            let endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 7);
+
+            try {
+                const { data, error } = await _supabase
+                    .from('daily_trailer_checks')
+                    .select('*')
+                    .gte('created_at', startDate.toISOString())
+                    .lt('created_at', endDate.toISOString())
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:40px;'>No trailer logs recorded for this week.</td></tr>";
+                    return;
+                }
+
+                tbody.innerHTML = data.map(log => {
+                    const dateObj = new Date(log.created_at);
+                    const formattedDate = dateObj.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: '2-digit' }) + ' ' + 
+                                          dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    
+                    const tColor = getCheckColor(log.condition_status);
+
+                    return `
+                        <tr>
+                            <td style="font-weight: 700;">${formattedDate}</td>
+                            <td><span class="driver-name" style="text-decoration: none; cursor: default;">${(log.driver_name || 'UNKNOWN').toUpperCase()}</span></td>
+                            <td><span class="badge" style="background: var(--border); color: white;">${(log.trailer_number || 'N/A').toUpperCase()}</span></td>
+                            <td style="color: ${tColor}; font-weight: 800;">${(log.condition_status || 'N/A').toUpperCase()}</td>
+                            <td style="font-size: 12px;">${log.defect_details || 'Nil'}</td>
+                            <td style="font-size: 12px; font-style: italic; opacity: 0.8;">${log.notes || ''}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:40px; color:var(--red)'>Error loading trailer data.</td></tr>";
+            }
         }
 
         window.onload = loadData;
