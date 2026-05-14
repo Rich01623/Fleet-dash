@@ -22,8 +22,6 @@
         .sidebar-header { padding: 25px; border-bottom: 1px solid var(--border); font-weight: 900; color: var(--red); text-transform: uppercase; font-size: 1.2rem; letter-spacing: 1px; }
         .sidebar-content { flex: 1; padding: 20px; font-size: 13px; color: #94a3b8; overflow-y: auto; line-height: 1.6; }
         
-        .driver-profile-box { display: none; margin-bottom: 20px; animation: fadeIn 0.3s; }
-        .profile-title { color: var(--text); font-size: 18px; font-weight: 800; border-left: 4px solid var(--red); padding-left: 10px; margin-bottom: 0; }
         .section-label { color: var(--red); font-weight: 900; font-size: 10px; text-transform: uppercase; margin-top: 20px; display: block; letter-spacing: 1px; }
         
         .log-text { background: #000; padding: 12px; border-radius: 5px; color: #f1f5f9; font-family: 'Segoe UI', monospace; font-size: 13px; white-space: pre-wrap; margin-top: 8px; border: 1px solid #1e293b; line-height: 1.5; }
@@ -34,9 +32,6 @@
         .report-box.alert-yellow { border-color: var(--yellow); background: rgba(255, 255, 0, 0.05); }
         
         .sub-note { margin-top: 8px; padding: 8px; background: rgba(255, 255, 255, 0.05); border-radius: 4px; border-left: 3px solid var(--blue); font-size: 11px; color: #f8fafc; }
-        
-        .map-dock { height: 280px; border-top: 3px solid var(--red); background: #000; position: relative; }
-        #sidebar-map { width: 100%; height: 100%; border: none; display: none; }
         
         .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 25px; position: relative; }
         .header { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 15px 25px; border-radius: 12px; border-bottom: 4px solid var(--red); margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
@@ -66,13 +61,16 @@
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        #manual-modal, #fuel-modal, #fuel-card-modal, #trailer-modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.9); }
-        .modal-content { background: var(--card); margin: 8% auto; padding: 30px; border-radius: 12px; width: 400px; border: 1px solid var(--border); }
+        #manual-modal, #fuel-modal, #fuel-card-modal, #trailer-modal, #driver-modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.9); }
+        
+        /* Map modal specific styling - higher z-index to stack over other modals */
+        #map-modal { display: none; position: fixed; z-index: 110; left: 0; top: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.95); }
+        
+        .modal-content { background: var(--card); margin: 8% auto; padding: 30px; border-radius: 12px; width: 400px; border: 1px solid var(--border); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: white; border-radius: 5px; box-sizing: border-box; }
         
-        /* Specific input styling for disabled state in the edit modal */
         input:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
@@ -85,36 +83,12 @@
                 <p><strong>Status:</strong> <span style="color:var(--active)">Operational</span></p>
                 <p style="margin-top:10px; color:var(--payroll)">Rate: £22.04/hr</p>
 
-                <!-- NEW FUEL CARDS SECTION IN SIDEBAR -->
                 <span class="section-label" style="margin-top:40px;">Active Fuel Cards</span>
                 <div id="sidebar-fuel-cards-list">
                     <div class="notes-text">Loading cards...</div>
                 </div>
             </div>
-
-            <div id="driver-profile" class="driver-profile-box">
-                <!-- BACK BUTTON IN THIS FLEX CONTAINER -->
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <div class="profile-title" id="side-name">DRIVER</div>
-                    <button class="btn" onclick="closeDriverProfile()" style="background: var(--border); color: #cbd5e1;">🔙 BACK</button>
-                </div>
-
-                <button id="side-copy-btn" class="btn" style="width:100%; margin-bottom:15px; justify-content:center; background: var(--blue); color:white;">Copy Full Log</button>
-                
-                <span class="section-label">Weekly Shift Log</span>
-                <div class="log-text" id="side-log">...</div>
-
-                <span class="section-label">Vehicle Report</span>
-                <div id="side-vehicle" class="report-box">No data.</div>
-
-                <span class="section-label">Trailer Report</span>
-                <div id="side-trailer" class="report-box">No data.</div>
-                
-                <span class="section-label">Shift Notes</span>
-                <div class="notes-text" id="side-notes">...</div>
-            </div>
         </div>
-        <div class="map-dock"><iframe id="sidebar-map" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
     </aside>
 
     <div class="main-wrapper">
@@ -192,7 +166,7 @@
                             <th>Driver Name</th>
                             <th>Vehicle Reg</th>
                             <th>Litres</th>
-                            <th>Cost (£)</th>
+                            <th>Cost Ex VAT (£)</th>
                             <th>Location</th>
                             <th>Fuel Card Used</th>
                         </tr>
@@ -232,6 +206,58 @@
         </div>
     </div>
 
+    <!-- Driver Profile Modal -->
+    <div id="driver-modal">
+        <div class="modal-content" style="width: 1000px; max-width: 95%;">
+            <h2 style="color:var(--text); font-size:22px; font-weight:800; margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <span id="modal-driver-name" style="border-left: 4px solid var(--red); padding-left: 10px;">DRIVER PROFILE</span>
+                <div>
+                    <button id="modal-copy-btn" class="btn" style="background: var(--blue); color:white; margin-right: 15px; padding: 10px 15px; font-size: 12px;">Copy Full Log</button>
+                    <button class="btn" onclick="closeDriverModal()" style="background: transparent; padding: 0; font-size: 18px;">❌</button>
+                </div>
+            </h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-height: 65vh; overflow-y: auto; padding-right: 10px; margin-top: 20px;">
+                <!-- Left Column -->
+                <div>
+                    <span class="section-label" style="margin-top: 0;">Weekly Shift Log</span>
+                    <div class="log-text" id="modal-side-log" style="min-height: 150px; font-size: 14px;">...</div>
+
+                    <span class="section-label">Shift Notes</span>
+                    <div class="notes-text" id="modal-side-notes" style="min-height: 80px; font-size: 13px;">...</div>
+                </div>
+                
+                <!-- Right Column -->
+                <div>
+                    <span class="section-label" style="margin-top: 0;">Vehicle Report</span>
+                    <div id="modal-side-vehicle" class="report-box" style="padding: 15px;">No data.</div>
+
+                    <span class="section-label">Trailer Report</span>
+                    <div id="modal-side-trailer" class="report-box" style="padding: 15px;">No data.</div>
+                </div>
+                
+                <!-- Full Width Fuel Report Column -->
+                <div style="grid-column: 1 / -1;">
+                    <span class="section-label" style="margin-top: 0;">Weekly Fuel Report</span>
+                    <div id="modal-side-fuel" class="report-box" style="padding: 15px; font-size: 13px; margin-bottom: 20px;">No fuel data.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: GPS Map Modal -->
+    <div id="map-modal">
+        <div class="modal-content" style="width: 1000px; max-width: 95%; height: 80vh; display: flex; flex-direction: column; padding: 20px;">
+            <h2 style="color:var(--text); text-transform:uppercase; font-size:18px; margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="border-left: 4px solid var(--blue); padding-left: 10px;">LOCATION DATA</span>
+                <button class="btn" onclick="closeMapModal()" style="background: transparent; padding: 0; font-size: 18px;">❌</button>
+            </h2>
+            <div style="flex: 1; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); margin-top: 10px;">
+                <iframe id="modal-map-frame" style="width: 100%; height: 100%; border: none;" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = "https://mbudwnwxucluwgbkgbfx.supabase.co"; 
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1idWR3bnd4dWNsdXdnYmtnYmZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMDQwMjYsImV4cCI6MjA5MDc4MDAyNn0.xFv-FiQ894vdfJuQYWQyF4WzQXmlnmnKvz_c8nuzl5Q"; 
@@ -242,7 +268,6 @@
         let knownDrivers = [];
         let currentReport = {};
         
-        // New global state for fuel card prices
         let activeFuelCards = {}; 
 
         function openWhatsApp() { window.open("https://web.whatsapp.com/", '_blank'); }
@@ -263,11 +288,14 @@
             return "#cbd5e1";
         }
 
-        /* --- FUNCTION: CLOSE DRIVER PROFILE --- */
-        function closeDriverProfile() {
-            document.getElementById('driver-profile').style.display = 'none';
-            document.getElementById('default-sidebar').style.display = 'block';
-            document.getElementById('sidebar-map').style.display = 'none';
+        /* --- NEW: MAP MODAL FUNCTIONS --- */
+        function openMapModal(coords) {
+            document.getElementById('map-modal').style.display = 'block';
+            document.getElementById('modal-map-frame').src = `https://maps.google.com/maps?q=${coords}&t=k&z=15&output=embed`;
+        }
+        function closeMapModal() {
+            document.getElementById('map-modal').style.display = 'none';
+            document.getElementById('modal-map-frame').src = ""; // Clears the iframe memory
         }
 
         /* --- FUEL CARDS FUNCTIONS --- */
@@ -278,7 +306,10 @@
                 
                 activeFuelCards = {};
                 data.forEach(card => {
-                    activeFuelCards[card.company] = parseFloat(card.price);
+                    if(card.company) {
+                        const safeKey = card.company.trim().toUpperCase();
+                        activeFuelCards[safeKey] = parseFloat(card.price);
+                    }
                 });
                 
                 renderFuelCardsSidebar();
@@ -298,7 +329,7 @@
             container.innerHTML = Object.keys(activeFuelCards).map(company => `
                 <div style="display:flex; justify-content:space-between; align-items:center; background:#1e293b; padding:10px; margin-top:8px; border-radius:5px; border:1px solid var(--border);">
                     <div>
-                        <div style="font-weight:bold; font-size:12px; color:var(--text);">${company.toUpperCase()}</div>
+                        <div style="font-weight:bold; font-size:12px; color:var(--text);">${company}</div>
                         <div style="font-size:12px; color:var(--money); font-weight:800; margin-top:2px;">£${activeFuelCards[company].toFixed(3)} <span style="font-size:10px; color:#94a3b8; font-weight:normal;">/ Litre</span></div>
                     </div>
                     <button class="btn" style="padding:4px 8px; font-size:9px;" onclick="openFuelCardModal('${company}', ${activeFuelCards[company]})">EDIT</button>
@@ -310,7 +341,7 @@
             document.getElementById('fc-modal-title').innerText = company ? 'Edit Fuel Card Price' : 'Add Fuel Card';
             const companyInput = document.getElementById('fc-company');
             companyInput.value = company;
-            companyInput.disabled = !!company; // Disable changing the name if we are just editing the price
+            companyInput.disabled = !!company; 
             
             document.getElementById('fc-price').value = price;
             document.getElementById('fuel-card-modal').style.display = 'block';
@@ -360,10 +391,17 @@
                 let endDate = new Date(startDate);
                 endDate.setDate(startDate.getDate() + 7);
 
+                let todayMidnight = new Date();
+                todayMidnight.setHours(0, 0, 0, 0);
+
                 const [vResponse, tResponse, fResponse] = await Promise.all([
-                    _supabase.from('daily_vehicle_checks').select('*').order('created_at', { ascending: false }),
-                    _supabase.from('daily_trailer_checks').select('*').order('created_at', { ascending: false }),
-                    _supabase.from('fuel_logs').select('litres')
+                    _supabase.from('daily_vehicle_checks').select('*')
+                        .gte('created_at', todayMidnight.toISOString())
+                        .order('created_at', { ascending: false }),
+                    _supabase.from('daily_trailer_checks').select('*')
+                        .gte('created_at', todayMidnight.toISOString())
+                        .order('created_at', { ascending: false }),
+                    _supabase.from('fuel_logs').select('*')
                         .gte('created_at', startDate.toISOString())
                         .lt('created_at', endDate.toISOString())
                 ]);
@@ -401,8 +439,16 @@
                 }
 
                 let totalLitres = 0;
+                const driverFuelData = {};
                 if (fResponse.data) {
-                    totalLitres = fResponse.data.reduce((acc, curr) => acc + (parseFloat(curr.litres) || 0), 0);
+                    fResponse.data.forEach(log => {
+                        totalLitres += (parseFloat(log.litres) || 0);
+                        const key = log.driver_name?.toLowerCase().trim();
+                        if (key) {
+                            if (!driverFuelData[key]) driverFuelData[key] = [];
+                            driverFuelData[key].push(log);
+                        }
+                    });
                 }
 
                 const { data: logs, error: lError } = await _supabase.from('fleet_logs').select('*')
@@ -448,6 +494,7 @@
                     const d = report[key];
                     const v = vehicleData[key] || { status: "No Check", detail: "N/A", reg: "No Check", miles: "0", time: "N/A" };
                     const t = trailerData[key] || { status: "No Check", detail: "N/A", trailer_no: "No Check", trailer_notes: "", time: "N/A" };
+                    const fLogs = driverFuelData[key] || []; 
                     
                     if (d.status === 'ACTIVE') activeCount++;
                     
@@ -472,10 +519,10 @@
                         <td style="opacity:0.6">${d.lastTime}</td>
                         <td><span class="v-check check-link" style="color:${vColor}">${vDisplayText}</span></td>
                         <td><span class="t-check check-link" style="color:${tColor}">${tDisplayText}</span></td>
-                        <td><span class="map-link" onclick="updateDock('${d.lastLoc}')">📍 GPS</span></td>
+                        <td><span class="map-link" onclick="openMapModal('${d.lastLoc}')">📍 GPS</span></td>
                     `;
 
-                    const openProfile = () => updateSidebar(d.name, shiftLogFormatted, d.allNotes.join('\n'), v, t);
+                    const openProfile = () => openDriverModal(d.name, shiftLogFormatted, d.allNotes.join('\n'), v, t, fLogs);
                     tr.querySelector('.driver-name').onclick = openProfile;
                     tr.querySelector('.v-check').onclick = openProfile;
                     tr.querySelector('.t-check').onclick = openProfile;
@@ -494,27 +541,27 @@
             }
         }
 
-        function updateSidebar(name, log, notes, vehicle, trailer) {
-            document.getElementById('default-sidebar').style.display = 'none';
-            document.getElementById('driver-profile').style.display = 'block';
-            document.getElementById('side-name').innerText = name.toUpperCase();
-            document.getElementById('side-log').innerText = log || "No shifts recorded.";
-            document.getElementById('side-notes').innerText = notes || "No notes.";
+        /* --- DRIVER MODAL FUNCTION --- */
+        function openDriverModal(name, log, notes, vehicle, trailer, fuelLogs) {
+            document.getElementById('driver-modal').style.display = 'block';
+            document.getElementById('modal-driver-name').innerText = name.toUpperCase() + " PROFILE";
+            document.getElementById('modal-side-log').innerText = log || "No shifts recorded.";
+            document.getElementById('modal-side-notes').innerText = notes || "No notes.";
 
             const vColor = getCheckColor(vehicle.status);
             let vClass = 'report-box';
             if(vColor === "var(--red)") vClass += ' alert-red';
             if(vColor === "var(--yellow)") vClass += ' alert-yellow';
 
-            document.getElementById('side-vehicle').className = vClass;
-            document.getElementById('side-vehicle').innerHTML = `
-                <div style="font-weight:bold; margin-bottom:5px; color:${vColor}">${vehicle.status}</div>
-                <div style="display:flex; justify-content:space-between; font-size:11px; opacity:0.8; margin-bottom:8px;">
-                    <span>Reg: ${vehicle.reg}</span>
-                    <span>Miles: ${vehicle.miles}</span>
+            document.getElementById('modal-side-vehicle').className = vClass;
+            document.getElementById('modal-side-vehicle').innerHTML = `
+                <div style="font-weight:bold; margin-bottom:10px; font-size:16px; color:${vColor}">${vehicle.status}</div>
+                <div style="display:flex; justify-content:space-between; font-size:13px; opacity:0.8; margin-bottom:10px;">
+                    <span>Reg: <strong style="color:white;">${vehicle.reg}</strong></span>
+                    <span>Miles: <strong style="color:white;">${vehicle.miles}</strong></span>
                 </div>
-                <div style="font-size:12px;">${vehicle.detail}</div>
-                <div style="font-size:9px; opacity:0.5; margin-top:8px; text-align:right;">${vehicle.time}</div>
+                <div style="font-size:13px;">${vehicle.detail}</div>
+                <div style="font-size:11px; opacity:0.5; margin-top:10px; text-align:right;">${vehicle.time}</div>
             `;
 
             const tColor = getCheckColor(trailer.status);
@@ -523,26 +570,72 @@
             if(tColor === "var(--yellow)") tClass += ' alert-yellow';
 
             let trailerHTML = `
-                <div style="font-weight:bold; margin-bottom:5px; color:${tColor}">${trailer.status}</div>
-                <div style="font-size:11px; opacity:0.8; margin-bottom:8px;">Trailer: ${trailer.trailer_no}</div>
-                <div style="font-size:12px;">${trailer.detail}</div>
+                <div style="font-weight:bold; margin-bottom:10px; font-size:16px; color:${tColor}">${trailer.status}</div>
+                <div style="font-size:13px; opacity:0.8; margin-bottom:10px;">Trailer: <strong style="color:white;">${trailer.trailer_no}</strong></div>
+                <div style="font-size:13px;">${trailer.detail}</div>
             `;
             
             if (trailer.trailer_notes && trailer.trailer_notes.trim() !== "") {
-                trailerHTML += `<div class="sub-note"><strong>Notes:</strong> ${trailer.trailer_notes}</div>`;
+                trailerHTML += `<div class="sub-note" style="font-size:13px; margin-top:12px;"><strong>Notes:</strong> ${trailer.trailer_notes}</div>`;
             }
 
-            trailerHTML += `<div style="font-size:9px; opacity:0.5; margin-top:8px; text-align:right;">${trailer.time}</div>`;
+            trailerHTML += `<div style="font-size:11px; opacity:0.5; margin-top:10px; text-align:right;">${trailer.time}</div>`;
             
-            document.getElementById('side-trailer').className = tClass;
-            document.getElementById('side-trailer').innerHTML = trailerHTML;
+            document.getElementById('modal-side-trailer').className = tClass;
+            document.getElementById('modal-side-trailer').innerHTML = trailerHTML;
 
-            document.getElementById('side-copy-btn').onclick = async () => {
-                const text = `DRIVER: ${name}\n\nWEEKLY LOG:\n${log}\n\nVEHICLE: ${vehicle.status} (${vehicle.reg})\nTRAILER: ${trailer.status} (${trailer.trailer_no})\nTrailer Notes: ${trailer.trailer_notes}\n\nNOTES:\n${notes}`;
+            // Build the Fuel Report UI for this specific driver
+            let fuelHTML = "No fuel logs recorded this week.";
+            let copyFuelText = "FUEL REPORT:\n"; 
+            
+            if (fuelLogs && fuelLogs.length > 0) {
+                fuelHTML = `
+                <table style="width:100%; border-collapse: collapse; margin-top: 5px;">
+                    <tr style="border-bottom: 1px solid var(--border); color:#94a3b8; text-transform:uppercase; text-align:left; font-size:11px;">
+                        <th style="padding:8px 0;">Date</th>
+                        <th style="padding:8px 0;">Location</th>
+                        <th style="padding:8px 0;">Litres</th>
+                        <th style="padding:8px 0;">Card Used</th>
+                        <th style="padding:8px 0;">Cost Ex VAT (£)</th>
+                    </tr>`;
+                    
+                fuelLogs.forEach(fLog => {
+                    const dateObj = new Date(fLog.created_at);
+                    const dateStr = dateObj.toLocaleDateString([], {weekday:'short', day:'2-digit', month:'2-digit'}) + ' ' + dateObj.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                    
+                    const litres = parseFloat(fLog.litres) || 0;
+                    const safeCardKey = (fLog.fuel_card || '').trim().toUpperCase();
+                    const pricePerLitre = activeFuelCards[safeCardKey] || 0;
+                    const cost = (litres * pricePerLitre).toFixed(2);
+                    
+                    fuelHTML += `
+                        <tr style="border-bottom: 1px solid #334155;">
+                            <td style="padding: 12px 0;">${dateStr}</td>
+                            <td style="padding: 12px 0;"><span class="map-link" onclick="openMapModal('${fLog.coordinates || ''}')">📍 GPS</span></td>
+                            <td style="padding: 12px 0; color:var(--blue); font-weight:bold;">${litres} L</td>
+                            <td style="padding: 12px 0;">${fLog.fuel_card || 'N/A'}</td>
+                            <td style="padding: 12px 0; color:var(--money); font-weight:bold;">£${cost}</td>
+                        </tr>
+                    `;
+                    copyFuelText += `- ${dateStr} | ${litres}L | ${fLog.fuel_card || 'N/A'} | £${cost}\n`;
+                });
+                fuelHTML += `</table>`;
+            } else {
+                copyFuelText += "No fuel logs recorded this week.\n";
+            }
+            
+            document.getElementById('modal-side-fuel').innerHTML = fuelHTML;
+
+            document.getElementById('modal-copy-btn').onclick = async () => {
+                const text = `DRIVER: ${name}\n\nWEEKLY LOG:\n${log}\n\nVEHICLE: ${vehicle.status} (${vehicle.reg})\nTRAILER: ${trailer.status} (${trailer.trailer_no})\nTrailer Notes: ${trailer.trailer_notes}\n\n${copyFuelText}\nNOTES:\n${notes}`;
                 await navigator.clipboard.writeText(text);
-                document.getElementById('side-copy-btn').innerText = "COPIED!";
-                setTimeout(() => document.getElementById('side-copy-btn').innerText = "Copy Full Log", 2000);
+                document.getElementById('modal-copy-btn').innerText = "COPIED!";
+                setTimeout(() => document.getElementById('modal-copy-btn').innerText = "Copy Full Log", 2000);
             };
+        }
+
+        function closeDriverModal() {
+            document.getElementById('driver-modal').style.display = 'none';
         }
 
         async function exportDataPDF() {
@@ -563,7 +656,6 @@
         }
         function closeModal() { document.getElementById('manual-modal').style.display = 'none'; }
         function toggleNewDriverInput() { document.getElementById('new-driver-container').style.display = (document.getElementById('manual-driver-select').value === 'NEW_DRIVER') ? 'block' : 'none'; }
-        function updateDock(coords) { const f = document.getElementById('sidebar-map'); f.style.display="block"; f.src = `https://maps.google.com/maps?q=${coords}&t=k&z=15&output=embed`; }
 
         async function submitManualEntry() {
             const select = document.getElementById('manual-driver-select');
@@ -581,9 +673,7 @@
         }
 
         /* --- WEEKLY FUEL LOGS MODAL FUNCTIONS --- */
-        function closeFuelModal() {
-            document.getElementById('fuel-modal').style.display = 'none';
-        }
+        function closeFuelModal() { document.getElementById('fuel-modal').style.display = 'none'; }
 
         async function openFuelModal() {
             document.getElementById('fuel-modal').style.display = 'block';
@@ -620,7 +710,8 @@
                                           dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     
                     const litresNum = parseFloat(log.litres) || 0;
-                    const pricePerLitre = activeFuelCards[log.fuel_card] || 0;
+                    const safeCardKey = (log.fuel_card || '').trim().toUpperCase();
+                    const pricePerLitre = activeFuelCards[safeCardKey] || 0;
                     const totalCost = (litresNum * pricePerLitre).toFixed(2);
                     
                     return `
@@ -630,7 +721,7 @@
                             <td><span class="badge" style="background: var(--border); color: white;">${(log.vehicle_reg || 'N/A').toUpperCase()}</span></td>
                             <td style="color: var(--blue); font-weight: 800;">${litresNum} L</td>
                             <td style="color: var(--money); font-weight: 800;">£${totalCost}</td>
-                            <td><span class="map-link" onclick="updateDock('${log.coordinates || ''}'); closeFuelModal();">📍 GPS</span></td>
+                            <td><span class="map-link" onclick="openMapModal('${log.coordinates || ''}')">📍 GPS</span></td>
                             <td>${log.fuel_card || 'N/A'}</td>
                         </tr>
                     `;
@@ -643,9 +734,7 @@
         }
 
         /* --- WEEKLY TRAILER LOGS MODAL FUNCTIONS --- */
-        function closeTrailerModal() {
-            document.getElementById('trailer-modal').style.display = 'none';
-        }
+        function closeTrailerModal() { document.getElementById('trailer-modal').style.display = 'none'; }
 
         async function openTrailerModal() {
             document.getElementById('trailer-modal').style.display = 'block';
