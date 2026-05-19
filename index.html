@@ -112,8 +112,23 @@
             <div class="stat-card"><h3>Drivers</h3><p id="stat-total">0</p></div>
             <div class="stat-card" style="border-left-color: var(--active)"><h3>On Duty</h3><p id="stat-active" style="color:var(--active)">0</p></div>
             <div class="stat-card" style="border-left-color: var(--payroll)"><h3>Nights Out</h3><p id="stat-nights" style="color:var(--payroll)">0</p></div>
-            <div class="stat-card" style="border-left-color: var(--money)"><h3>Wage Bill</h3><p id="stat-wages" style="color:var(--money)">£0.00</p></div>
-            <div class="stat-card" style="border-left-color: var(--blue)"><h3>Fuel Total</h3><p id="stat-fuel" style="color:var(--blue)">0L</p></div>
+            <div class="stat-card" style="border-left-color: var(--money)">
+                <h3>Wage Bill</h3>
+                <p id="stat-wages" style="color:var(--money)">£0.00</p>
+                <div id="stat-hours" style="font-size:10px; color:#94a3b8; margin-top:4px; font-weight:bold;">0.00 Hrs Total</div>
+            </div>
+            <div class="stat-card" style="border-left-color: var(--blue)">
+                <h3>Fuel Total</h3>
+                <p id="stat-fuel" style="color:var(--blue)">0L</p>
+                <div id="stat-fuel-cost" style="font-size:10px; color:#94a3b8; margin-top:4px; font-weight:bold;">£0.00 Spent</div>
+            </div>
+            <!-- NEW: ON FORM CARD -->
+            <div class="stat-card" style="border-left-color: #a855f7">
+                <h3>On Form (Checks)</h3>
+                <div id="stat-on-form" style="font-size:11px; color:var(--text); margin-top:8px; max-height:40px; overflow-y:auto; line-height: 1.4; font-weight: 700;">
+                    Checking...
+                </div>
+            </div>
         </div>
 
         <div class="table-container">
@@ -385,7 +400,6 @@
 
             container.innerHTML = Object.keys(activeFuelCards).map(company => {
                 let displayPrice = activeFuelCards[company];
-                // GUARD RAIL: Automatically treat values > 5 as pence and convert to pounds
                 if (displayPrice > 5) displayPrice = displayPrice / 100;
 
                 return `
@@ -457,12 +471,15 @@
                 let todayMidnight = new Date();
                 todayMidnight.setHours(0, 0, 0, 0);
 
+                // Fetching full week for On Form math, filtering later for main table
                 const [vResponse, tResponse, fResponse] = await Promise.all([
                     _supabase.from('daily_vehicle_checks').select('*')
-                        .gte('created_at', todayMidnight.toISOString())
+                        .gte('created_at', startDate.toISOString())
+                        .lt('created_at', endDate.toISOString())
                         .order('created_at', { ascending: false }),
                     _supabase.from('daily_trailer_checks').select('*')
-                        .gte('created_at', todayMidnight.toISOString())
+                        .gte('created_at', startDate.toISOString())
+                        .lt('created_at', endDate.toISOString())
                         .order('created_at', { ascending: false }),
                     _supabase.from('fuel_logs').select('*')
                         .gte('created_at', startDate.toISOString())
@@ -470,42 +487,67 @@
                 ]);
 
                 const vehicleData = {};
+                const driverVChecks = {}; 
                 if (vResponse.data) {
                     vResponse.data.forEach(check => {
                         const key = check.driver_name?.toLowerCase().trim();
-                        if (key && !vehicleData[key]) {
-                            vehicleData[key] = {
-                                status: check.condition_status || "No Check",
-                                reg: check.registration || "No Check",
-                                miles: check.mileage || "0",
-                                detail: check.defect_details || "No defects reported.",
-                                time: new Date(check.created_at).toLocaleString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})
-                            };
+                        if (key) {
+                            // Collect dates for On Form check
+                            let dateStr = new Date(check.created_at).toLocaleDateString();
+                            if(!driverVChecks[key]) driverVChecks[key] = new Set();
+                            driverVChecks[key].add(dateStr);
+
+                            // Only push to vehicleData if it's from TODAY (preserves midnight reset)
+                            if (!vehicleData[key] && new Date(check.created_at) >= todayMidnight) {
+                                vehicleData[key] = {
+                                    status: check.condition_status || "No Check",
+                                    reg: check.registration || "No Check",
+                                    miles: check.mileage || "0",
+                                    detail: check.defect_details || "No defects reported.",
+                                    time: new Date(check.created_at).toLocaleString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})
+                                };
+                            }
                         }
                     });
                 }
 
                 const trailerData = {};
+                const driverTChecks = {};
                 if (tResponse.data) {
                     tResponse.data.forEach(check => {
                         const key = check.driver_name?.toLowerCase().trim();
-                        if (key && !trailerData[key]) {
-                            trailerData[key] = {
-                                status: check.condition_status || "No Check",
-                                trailer_no: check.trailer_number || "No Check",
-                                detail: check.defect_details || "No defects reported.",
-                                trailer_notes: check.notes || "",
-                                time: new Date(check.created_at).toLocaleString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})
-                            };
+                        if (key) {
+                            let dateStr = new Date(check.created_at).toLocaleDateString();
+                            if(!driverTChecks[key]) driverTChecks[key] = new Set();
+                            driverTChecks[key].add(dateStr);
+
+                            // Midnight reset guard
+                            if (!trailerData[key] && new Date(check.created_at) >= todayMidnight) {
+                                trailerData[key] = {
+                                    status: check.condition_status || "No Check",
+                                    trailer_no: check.trailer_number || "No Check",
+                                    detail: check.defect_details || "No defects reported.",
+                                    trailer_notes: check.notes || "",
+                                    time: new Date(check.created_at).toLocaleString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})
+                                };
+                            }
                         }
                     });
                 }
 
                 let totalLitres = 0;
+                let totalFuelCost = 0;
                 const driverFuelData = {};
                 if (fResponse.data) {
                     fResponse.data.forEach(log => {
-                        totalLitres += (parseFloat(log.litres) || 0);
+                        let l = parseFloat(log.litres) || 0;
+                        totalLitres += l;
+                        
+                        const safeCardKey = (log.fuel_card || '').trim().toUpperCase();
+                        let pricePerLitre = activeFuelCards[safeCardKey] || 0;
+                        if (pricePerLitre > 5) pricePerLitre = pricePerLitre / 100;
+                        totalFuelCost += (l * pricePerLitre);
+
                         const key = log.driver_name?.toLowerCase().trim();
                         if (key) {
                             if (!driverFuelData[key]) driverFuelData[key] = [];
@@ -524,6 +566,7 @@
                 const report = {};
                 let activeCount = 0, nightTotal = 0, totalMs = 0;
                 let driverSet = new Set();
+                let driverWorkedDays = {}; // Tracking for "On Form"
 
                 logs.forEach(log => {
                     const key = log.driver_name.toLowerCase().trim();
@@ -534,7 +577,14 @@
                     const dateObj = new Date(log.created_at);
                     if (log.notes_text) d.allNotes.push(`[${dateObj.toLocaleDateString()}] ${log.notes_text}`);
 
-                    if (log.action_type === 'START') { d.lastStart = dateObj; d.status = 'ACTIVE'; }
+                    if (log.action_type === 'START') { 
+                        d.lastStart = dateObj; 
+                        d.status = 'ACTIVE'; 
+                        
+                        let dateStr = dateObj.toLocaleDateString();
+                        if(!driverWorkedDays[key]) driverWorkedDays[key] = new Set();
+                        driverWorkedDays[key].add(dateStr);
+                    }
                     else if (log.action_type === 'END' && d.lastStart) {
                         const shiftMs = dateObj - d.lastStart;
                         d.ms += shiftMs; totalMs += shiftMs;
@@ -551,6 +601,23 @@
 
                 currentReport = report;
                 knownDrivers = Array.from(driverSet).sort();
+                
+                // CALCULATE "ON FORM" DRIVERS
+                let onFormDrivers = [];
+                for (let driver in driverWorkedDays) {
+                    let daysWorked = Array.from(driverWorkedDays[driver]);
+                    if (daysWorked.length > 0) {
+                        let isOnForm = true;
+                        for (let day of daysWorked) {
+                            if (!driverVChecks[driver] || !driverVChecks[driver].has(day) || !driverTChecks[driver] || !driverTChecks[driver].has(day)) {
+                                isOnForm = false;
+                                break;
+                            }
+                        }
+                        if (isOnForm) onFormDrivers.push(report[driver].name.toUpperCase()); // Keeps correct casing
+                    }
+                }
+
                 tbody.innerHTML = "";
 
                 Object.keys(report).sort().forEach(key => {
@@ -593,11 +660,22 @@
                     tbody.appendChild(tr);
                 });
 
+                // UPDATE ALL STAT CARDS
                 document.getElementById('stat-total').innerText = Object.keys(report).length;
                 document.getElementById('stat-active').innerText = activeCount;
                 document.getElementById('stat-nights').innerText = nightTotal;
-                document.getElementById('stat-wages').innerText = `£${((totalMs/3600000)*HOURLY_RATE).toLocaleString()}`;
+                
+                // Wages + Subtitle
+                document.getElementById('stat-wages').innerText = `£${((totalMs/3600000)*HOURLY_RATE).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                document.getElementById('stat-hours').innerText = `${(totalMs/3600000).toFixed(2)} Hrs Total`;
+                
+                // Fuel + Subtitle
                 document.getElementById('stat-fuel').innerText = `${totalLitres.toLocaleString()}L`;
+                document.getElementById('stat-fuel-cost').innerText = `£${totalFuelCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} Spent`;
+
+                // On Form Card
+                document.getElementById('stat-on-form').innerHTML = onFormDrivers.length > 0 ? onFormDrivers.join('<br>') : '<span style="color:#94a3b8; font-weight:normal;">Nobody yet...</span>';
+
             } catch (e) { 
                 console.error(e);
                 tbody.innerHTML = "<tr><td colspan='9' style='text-align:center; padding:40px; color:var(--red)'>Fatal Sync Error</td></tr>"; 
@@ -624,7 +702,7 @@
                     <span>Miles: <strong style="color:white;">${vehicle.miles}</strong></span>
                 </div>
                 <div style="font-size:13px;">${vehicle.detail}</div>
-                <div style="font-size:9px; opacity:0.5; margin-top:10px; text-align:right;">${vehicle.time}</div>
+                <div style="font-size:11px; opacity:0.5; margin-top:10px; text-align:right;">${vehicle.time}</div>
             `;
 
             const tColor = getCheckColor(trailer.status);
@@ -642,7 +720,7 @@
                 trailerHTML += `<div class="sub-note" style="font-size:13px; margin-top:12px;"><strong>Notes:</strong> ${trailer.trailer_notes}</div>`;
             }
 
-            trailerHTML += `<div style="font-size:9px; opacity:0.5; margin-top:10px; text-align:right;">${trailer.time}</div>`;
+            trailerHTML += `<div style="font-size:11px; opacity:0.5; margin-top:10px; text-align:right;">${trailer.time}</div>`;
             
             document.getElementById('modal-side-trailer').className = tClass;
             document.getElementById('modal-side-trailer').innerHTML = trailerHTML;
@@ -669,7 +747,6 @@
                     const safeCardKey = (fLog.fuel_card || '').trim().toUpperCase();
                     let pricePerLitre = activeFuelCards[safeCardKey] || 0;
                     
-                    // ENGINE GUARD: Auto-correct pence to pounds
                     if (pricePerLitre > 5) pricePerLitre = pricePerLitre / 100;
                     
                     const cost = (litres * pricePerLitre).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -779,7 +856,6 @@
                     const safeCardKey = (log.fuel_card || '').trim().toUpperCase();
                     let pricePerLitre = activeFuelCards[safeCardKey] || 0;
                     
-                    // ENGINE GUARD: Auto-correct pence to pounds
                     if (pricePerLitre > 5) pricePerLitre = pricePerLitre / 100;
                     
                     const totalCost = (litresNum * pricePerLitre).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
