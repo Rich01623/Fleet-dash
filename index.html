@@ -109,8 +109,18 @@
         </div>
 
         <div class="stats-grid">
-            <div class="stat-card"><h3>Drivers</h3><p id="stat-total">0</p></div>
-            <div class="stat-card" style="border-left-color: var(--active)"><h3>On Duty</h3><p id="stat-active" style="color:var(--active)">0</p></div>
+            <!-- UPDATED: Combined Drivers & On Duty Card -->
+            <div class="stat-card" style="display: flex; justify-content: space-between;">
+                <div>
+                    <h3>Drivers</h3>
+                    <p id="stat-total">0</p>
+                </div>
+                <div style="text-align: right;">
+                    <h3 style="color: var(--active);">On Duty</h3>
+                    <p id="stat-active" style="color: var(--active);">0</p>
+                </div>
+            </div>
+            
             <div class="stat-card" style="border-left-color: var(--payroll)"><h3>Nights Out</h3><p id="stat-nights" style="color:var(--payroll)">0</p></div>
             <div class="stat-card" style="border-left-color: var(--money)">
                 <h3>Wage Bill</h3>
@@ -122,7 +132,6 @@
                 <p id="stat-fuel" style="color:var(--blue)">0L</p>
                 <div id="stat-fuel-cost" style="font-size:10px; color:#94a3b8; margin-top:4px; font-weight:bold;">£0.00 Spent</div>
             </div>
-            <!-- NEW: ON FORM CARD -->
             <div class="stat-card" style="border-left-color: #a855f7">
                 <h3>On Form (Checks)</h3>
                 <div id="stat-on-form" style="font-size:11px; color:var(--text); margin-top:8px; max-height:40px; overflow-y:auto; line-height: 1.4; font-weight: 700;">
@@ -471,7 +480,6 @@
                 let todayMidnight = new Date();
                 todayMidnight.setHours(0, 0, 0, 0);
 
-                // Fetching full week for On Form math, filtering later for main table
                 const [vResponse, tResponse, fResponse] = await Promise.all([
                     _supabase.from('daily_vehicle_checks').select('*')
                         .gte('created_at', startDate.toISOString())
@@ -492,12 +500,10 @@
                     vResponse.data.forEach(check => {
                         const key = check.driver_name?.toLowerCase().trim();
                         if (key) {
-                            // Collect dates for On Form check
                             let dateStr = new Date(check.created_at).toLocaleDateString();
                             if(!driverVChecks[key]) driverVChecks[key] = new Set();
                             driverVChecks[key].add(dateStr);
 
-                            // Only push to vehicleData if it's from TODAY (preserves midnight reset)
                             if (!vehicleData[key] && new Date(check.created_at) >= todayMidnight) {
                                 vehicleData[key] = {
                                     status: check.condition_status || "No Check",
@@ -521,7 +527,6 @@
                             if(!driverTChecks[key]) driverTChecks[key] = new Set();
                             driverTChecks[key].add(dateStr);
 
-                            // Midnight reset guard
                             if (!trailerData[key] && new Date(check.created_at) >= todayMidnight) {
                                 trailerData[key] = {
                                     status: check.condition_status || "No Check",
@@ -566,7 +571,7 @@
                 const report = {};
                 let activeCount = 0, nightTotal = 0, totalMs = 0;
                 let driverSet = new Set();
-                let driverWorkedDays = {}; // Tracking for "On Form"
+                let driverWorkedDays = {}; 
 
                 logs.forEach(log => {
                     const key = log.driver_name.toLowerCase().trim();
@@ -602,7 +607,6 @@
                 currentReport = report;
                 knownDrivers = Array.from(driverSet).sort();
                 
-                // CALCULATE "ON FORM" DRIVERS
                 let onFormDrivers = [];
                 for (let driver in driverWorkedDays) {
                     let daysWorked = Array.from(driverWorkedDays[driver]);
@@ -614,7 +618,7 @@
                                 break;
                             }
                         }
-                        if (isOnForm) onFormDrivers.push(report[driver].name.toUpperCase()); // Keeps correct casing
+                        if (isOnForm) onFormDrivers.push(report[driver].name.toUpperCase()); 
                     }
                 }
 
@@ -660,20 +664,16 @@
                     tbody.appendChild(tr);
                 });
 
-                // UPDATE ALL STAT CARDS
                 document.getElementById('stat-total').innerText = Object.keys(report).length;
                 document.getElementById('stat-active').innerText = activeCount;
                 document.getElementById('stat-nights').innerText = nightTotal;
                 
-                // Wages + Subtitle
                 document.getElementById('stat-wages').innerText = `£${((totalMs/3600000)*HOURLY_RATE).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
                 document.getElementById('stat-hours').innerText = `${(totalMs/3600000).toFixed(2)} Hrs Total`;
                 
-                // Fuel + Subtitle
                 document.getElementById('stat-fuel').innerText = `${totalLitres.toLocaleString()}L`;
                 document.getElementById('stat-fuel-cost').innerText = `£${totalFuelCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} Spent`;
 
-                // On Form Card
                 document.getElementById('stat-on-form').innerHTML = onFormDrivers.length > 0 ? onFormDrivers.join('<br>') : '<span style="color:#94a3b8; font-weight:normal;">Nobody yet...</span>';
 
             } catch (e) { 
