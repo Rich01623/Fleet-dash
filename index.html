@@ -61,7 +61,7 @@
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        #manual-modal, #fuel-modal, #fuel-card-modal, #trailer-modal, #driver-modal, #broadcast-modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.9); }
+        #manual-modal, #fuel-modal, #fuel-card-modal, #trailer-modal, #driver-modal, #broadcast-modal, #onform-modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.9); }
         
         #map-modal { display: none; position: fixed; z-index: 110; left: 0; top: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.95); }
         
@@ -109,7 +109,6 @@
         </div>
 
         <div class="stats-grid">
-            <!-- UPDATED: Combined Drivers & On Duty Card -->
             <div class="stat-card" style="display: flex; justify-content: space-between;">
                 <div>
                     <h3>Drivers</h3>
@@ -133,9 +132,9 @@
                 <div id="stat-fuel-cost" style="font-size:10px; color:#94a3b8; margin-top:4px; font-weight:bold;">£0.00 Spent</div>
             </div>
             <div class="stat-card" style="border-left-color: #a855f7">
-                <h3>On Form (Checks)</h3>
-                <div id="stat-on-form" style="font-size:11px; color:var(--text); margin-top:8px; max-height:40px; overflow-y:auto; line-height: 1.4; font-weight: 700;">
-                    Checking...
+                <h3>Compliance</h3>
+                <div id="stat-on-form" style="font-size:12px; margin-top:8px;">
+                    <span style="color:#94a3b8;">Analyzing logs...</span>
                 </div>
             </div>
         </div>
@@ -150,7 +149,6 @@
         </div>
     </div>
 
-    <!-- Manual Log Modal -->
     <div id="manual-modal">
         <div class="modal-content">
             <h2 style="color:var(--red); text-transform:uppercase; font-size:16px; margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Manual Log Entry</h2>
@@ -163,7 +161,6 @@
         </div>
     </div>
 
-    <!-- Broadcast Modal -->
     <div id="broadcast-modal">
         <div class="modal-content">
             <h2 style="color:var(--red); text-transform:uppercase; font-size:16px; margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Broadcast Message</h2>
@@ -178,7 +175,6 @@
         </div>
     </div>
 
-    <!-- Fuel Cards Modal -->
     <div id="fuel-card-modal">
         <div class="modal-content">
             <h2 id="fc-modal-title" style="color:var(--red); text-transform:uppercase; font-size:16px; margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Add Fuel Card</h2>
@@ -191,7 +187,6 @@
         </div>
     </div>
 
-    <!-- Fuel Logs Modal -->
     <div id="fuel-modal">
         <div class="modal-content" style="width: 1000px; max-width: 95%;">
             <h2 style="color:var(--red); text-transform:uppercase; font-size:16px; margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
@@ -219,7 +214,6 @@
         </div>
     </div>
 
-    <!-- Trailer Logs Modal -->
     <div id="trailer-modal">
         <div class="modal-content" style="width: 1000px; max-width: 95%;">
             <h2 style="color:var(--red); text-transform:uppercase; font-size:16px; margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
@@ -246,7 +240,41 @@
         </div>
     </div>
 
-    <!-- Driver Profile Modal -->
+    <div id="onform-modal">
+        <div class="modal-content" style="width: 1000px; max-width: 95%;">
+            <h2 style="color:#a855f7; text-transform:uppercase; font-size:18px; margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="border-left: 4px solid #a855f7; padding-left: 10px;">WEEKLY COMPLIANCE REPORT</span>
+                <button class="btn" onclick="closeOnFormModal()" style="background: transparent; padding: 0; font-size: 18px;">❌</button>
+            </h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px; max-height: 65vh; overflow-y: auto; padding-right: 10px; margin-top: 20px;">
+                <div>
+                    <h3 style="color:var(--active); font-size:14px; text-transform:uppercase; border-bottom:2px solid var(--border); padding-bottom:8px; margin-top:0;">🏆 Perfect Compliance</h3>
+                    <div id="modal-onform-list" style="line-height:2; font-size:14px; font-weight:bold; color:var(--text); margin-top:10px;">
+                        Loading...
+                    </div>
+                </div>
+                
+                <div class="table-container" style="border:none; background:transparent;">
+                    <h3 style="color:var(--red); font-size:14px; text-transform:uppercase; border-bottom:2px solid var(--border); padding-bottom:8px; margin-top:0;">⚠️ Missed Checks Log</h3>
+                    <table style="width:100%; border-collapse: collapse; min-width:auto; margin-top:10px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--border); color:#94a3b8; text-transform:uppercase; text-align:left; font-size:11px;">
+                                <th style="padding:8px 0; border:none;">Date</th>
+                                <th style="padding:8px 0; border:none;">Driver</th>
+                                <th style="padding:8px 0; border:none;">Vehicle Check</th>
+                                <th style="padding:8px 0; border:none;">Trailer Check</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-missed-list" style="font-size:13px;">
+                            <tr><td colspan="4" style="padding: 20px 0;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="driver-modal">
         <div class="modal-content" style="width: 1000px; max-width: 95%;">
             <h2 style="color:var(--text); font-size:22px; font-weight:800; margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
@@ -258,7 +286,6 @@
             </h2>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-height: 65vh; overflow-y: auto; padding-right: 10px; margin-top: 20px;">
-                <!-- Left Column -->
                 <div>
                     <span class="section-label" style="margin-top: 0;">Weekly Shift Log</span>
                     <div class="log-text" id="modal-side-log" style="min-height: 150px; font-size: 14px;">...</div>
@@ -267,7 +294,6 @@
                     <div class="notes-text" id="modal-side-notes" style="min-height: 80px; font-size: 13px;">...</div>
                 </div>
                 
-                <!-- Right Column -->
                 <div>
                     <span class="section-label" style="margin-top: 0;">Vehicle Report</span>
                     <div id="modal-side-vehicle" class="report-box" style="padding: 15px;">No data.</div>
@@ -276,7 +302,6 @@
                     <div id="modal-side-trailer" class="report-box" style="padding: 15px;">No data.</div>
                 </div>
                 
-                <!-- Full Width Fuel Report Column -->
                 <div style="grid-column: 1 / -1;">
                     <span class="section-label" style="margin-top: 0;">Weekly Fuel Report</span>
                     <div id="modal-side-fuel" class="report-box" style="padding: 15px; font-size: 13px; margin-bottom: 20px;">No fuel data.</div>
@@ -285,7 +310,6 @@
         </div>
     </div>
 
-    <!-- GPS Map Modal -->
     <div id="map-modal">
         <div class="modal-content" style="width: 1000px; max-width: 95%; height: 80vh; display: flex; flex-direction: column; padding: 20px;">
             <h2 style="color:var(--text); text-transform:uppercase; font-size:18px; margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
@@ -367,6 +391,15 @@
                 console.error("Error sending broadcast:", error);
                 alert("Failed to send broadcast. Please try again.");
             }
+        }
+
+        /* --- COMPLIANCE / ON FORM MODAL --- */
+        function openOnFormModal() {
+            document.getElementById('onform-modal').style.display = 'block';
+        }
+
+        function closeOnFormModal() {
+            document.getElementById('onform-modal').style.display = 'none';
         }
 
         /* --- MAP MODAL FUNCTIONS --- */
@@ -607,20 +640,34 @@
                 currentReport = report;
                 knownDrivers = Array.from(driverSet).sort();
                 
+                // ADVANCED COMPLIANCE LOGIC (ON FORM & MISSED CHECKS)
                 let onFormDrivers = [];
+                let missedChecksLog = [];
+                
                 for (let driver in driverWorkedDays) {
                     let daysWorked = Array.from(driverWorkedDays[driver]);
                     if (daysWorked.length > 0) {
                         let isOnForm = true;
                         for (let day of daysWorked) {
-                            if (!driverVChecks[driver] || !driverVChecks[driver].has(day) || !driverTChecks[driver] || !driverTChecks[driver].has(day)) {
+                            let hasV = driverVChecks[driver] && driverVChecks[driver].has(day);
+                            let hasT = driverTChecks[driver] && driverTChecks[driver].has(day);
+                            
+                            if (!hasV || !hasT) {
                                 isOnForm = false;
-                                break;
+                                missedChecksLog.push({
+                                    date: day,
+                                    driver: report[driver].name.toUpperCase(),
+                                    missedV: !hasV,
+                                    missedT: !hasT
+                                });
                             }
                         }
                         if (isOnForm) onFormDrivers.push(report[driver].name.toUpperCase()); 
                     }
                 }
+                
+                // Sort the missed logs with the newest dates at the top
+                missedChecksLog.sort((a, b) => new Date(b.date) - new Date(a.date));
 
                 tbody.innerHTML = "";
 
@@ -664,8 +711,9 @@
                     tbody.appendChild(tr);
                 });
 
+                // UPDATE DASHBOARD STAT CARDS
                 document.getElementById('stat-total').innerText = Object.keys(report).length;
-                document.getElementById('stat-active').innerText = activeCount;
+                document.getElementById('stat-active').innerText = activeCount; 
                 document.getElementById('stat-nights').innerText = nightTotal;
                 
                 document.getElementById('stat-wages').innerText = `£${((totalMs/3600000)*HOURLY_RATE).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
@@ -674,7 +722,32 @@
                 document.getElementById('stat-fuel').innerText = `${totalLitres.toLocaleString()}L`;
                 document.getElementById('stat-fuel-cost').innerText = `£${totalFuelCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} Spent`;
 
-                document.getElementById('stat-on-form').innerHTML = onFormDrivers.length > 0 ? onFormDrivers.join('<br>') : '<span style="color:#94a3b8; font-weight:normal;">Nobody yet...</span>';
+                // INJECT NEW ON FORM CARD HTML
+                document.getElementById('stat-on-form').innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                        <span style="color:var(--active); font-weight:800; font-size: 13px;">🏆 ${onFormDrivers.length} Perfect</span>
+                        <span style="color:var(--red); font-weight:800; font-size: 13px;">⚠️ ${missedChecksLog.length} Missed</span>
+                    </div>
+                    <button class="btn" style="width:100%; justify-content:center; background:#a855f7; color:white; font-size:10px; font-weight:bold; letter-spacing:0.5px;" onclick="openOnFormModal()">VIEW REPORT</button>
+                `;
+
+                // POPULATE THE COMPLIANCE MODAL ARRAYS
+                document.getElementById('modal-onform-list').innerHTML = onFormDrivers.length > 0 ? onFormDrivers.join('<br>') : '<span style="color:#94a3b8; font-weight:normal;">No drivers achieved perfect compliance this week.</span>';
+
+                let missedHTML = "";
+                if (missedChecksLog.length > 0) {
+                    missedHTML = missedChecksLog.map(m => `
+                        <tr style="border-bottom: 1px solid #334155;">
+                            <td style="padding: 12px 0; font-weight:bold; font-size: 12px;">${m.date}</td>
+                            <td style="padding: 12px 0; color:var(--blue); font-weight:900; font-size: 13px;">${m.driver}</td>
+                            <td style="padding: 12px 0; color:${m.missedV ? 'var(--red)' : 'var(--active)'}; font-weight:bold;">${m.missedV ? 'MISSED' : 'DONE'}</td>
+                            <td style="padding: 12px 0; color:${m.missedT ? 'var(--red)' : 'var(--active)'}; font-weight:bold;">${m.missedT ? 'MISSED' : 'DONE'}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    missedHTML = `<tr><td colspan="4" style="padding: 30px 0; text-align:center; color:var(--active); font-size: 14px; font-weight:bold;">No missed checks! Everyone is 100% on form.</td></tr>`;
+                }
+                document.getElementById('modal-missed-list').innerHTML = missedHTML;
 
             } catch (e) { 
                 console.error(e);
