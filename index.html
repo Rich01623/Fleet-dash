@@ -42,6 +42,11 @@
         .btn { background: var(--border); color: #cbd5e1; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s; }
         .btn:hover { background: #475569; color: white; }
         .btn-active-week { background: var(--payroll); color: #000; }
+        .iso-week-picker { display: flex; align-items: center; gap: 6px; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 6px; }
+        .iso-week-picker label { color: #94a3b8; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.7px; margin-right: 2px; }
+        .iso-week-picker select { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 5px; padding: 7px 8px; font-size: 11px; font-weight: 800; outline: none; }
+        .iso-week-picker select:focus { border-color: var(--payroll); }
+        #selected-week-label { color: var(--payroll); font-size: 10px; font-weight: 900; white-space: nowrap; }
 
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 25px; }
         .stat-card { background: var(--card); padding: 15px; border-radius: 10px; border-left: 5px solid var(--border); }
@@ -103,7 +108,14 @@
         <div class="header">
             <div class="logo">FTS <span>DATA CENTRE</span></div>
             <div class="action-bar">
-                <button id="week-toggle" class="btn" onclick="toggleWeek()">📅 Previous Week</button>
+                <div class="iso-week-picker">
+                    <label for="iso-week-select">Payroll Week</label>
+                    <select id="iso-week-year" onchange="onIsoYearChange()" title="ISO payroll year"></select>
+                    <select id="iso-week-select" title="ISO week number"></select>
+                    <button class="btn btn-active-week" onclick="applySelectedIsoWeek()">Load</button>
+                    <button class="btn" onclick="resetToCurrentIsoWeek()">This Week</button>
+                    <span id="selected-week-label">Loading...</span>
+                </div>
                 <button class="btn" onclick="exportDataPDF()">📄 Export PDF</button>
                 <button class="btn btn-whatsapp" onclick="openWhatsApp()">💬 Group Message</button>
                 <a href="https://rich01623.github.io/Maintenance/" target="_blank" class="btn">🛠️ Vehicle Status</a>
@@ -347,7 +359,8 @@
         const HOURLY_RATE = 22.04;
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
-        let isPreviousWeek = false;
+        let selectedIsoYear = null;
+        let selectedIsoWeek = null;
         let knownDrivers = [];
         let currentReport = {};
         
@@ -355,12 +368,123 @@
 
         function openWhatsApp() { window.open("https://web.whatsapp.com/", '_blank'); }
 
-        function toggleWeek() {
-            isPreviousWeek = !isPreviousWeek;
-            const btn = document.getElementById('week-toggle');
-            btn.innerText = isPreviousWeek ? "📅 Current Week" : "📅 Previous Week";
-            btn.classList.toggle('btn-active-week', isPreviousWeek);
+        function getISOWeekInfo(date) {
+            const d = new Date(date.getTime());
+            d.setHours(0, 0, 0, 0);
+            d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+            const isoYear = d.getFullYear();
+            const week1 = new Date(isoYear, 0, 4);
+            const isoWeek = 1 + Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+            return { year: isoYear, week: isoWeek };
+        }
+
+        function getISOWeeksInYear(year) {
+            return getISOWeekInfo(new Date(year, 11, 28)).week;
+        }
+
+        function getDateOfISOWeek(year, week) {
+            const jan4 = new Date(year, 0, 4);
+            const day = jan4.getDay() || 7;
+            const monday = new Date(jan4);
+            monday.setDate(jan4.getDate() - day + 1 + ((week - 1) * 7));
+            monday.setHours(0, 0, 0, 0);
+            return monday;
+        }
+
+        function formatShortDate(date) {
+            return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
+        }
+
+        function populateIsoYearOptions() {
+            const yearSelect = document.getElementById('iso-week-year');
+            if (!yearSelect) return;
+
+            const currentInfo = getISOWeekInfo(new Date());
+            if (!selectedIsoYear) selectedIsoYear = currentInfo.year;
+            if (!selectedIsoWeek) selectedIsoWeek = currentInfo.week;
+
+            let html = '';
+            for (let year = currentInfo.year + 1; year >= currentInfo.year - 6; year--) {
+                html += `<option value="${year}" ${year === selectedIsoYear ? 'selected' : ''}>${year}</option>`;
+            }
+            yearSelect.innerHTML = html;
+        }
+
+        function populateIsoWeekOptions() {
+            const weekSelect = document.getElementById('iso-week-select');
+            const yearSelect = document.getElementById('iso-week-year');
+            if (!weekSelect || !yearSelect) return;
+
+            selectedIsoYear = parseInt(yearSelect.value, 10) || getISOWeekInfo(new Date()).year;
+            const maxWeeks = getISOWeeksInYear(selectedIsoYear);
+            if (!selectedIsoWeek || selectedIsoWeek > maxWeeks) selectedIsoWeek = maxWeeks;
+
+            let html = '';
+            for (let week = 1; week <= maxWeeks; week++) {
+                const padded = String(week).padStart(2, '0');
+                html += `<option value="${week}" ${week === selectedIsoWeek ? 'selected' : ''}>ISO Week ${padded}</option>`;
+            }
+            weekSelect.innerHTML = html;
+        }
+
+        function updateSelectedWeekLabel() {
+            const label = document.getElementById('selected-week-label');
+            if (!label || !selectedIsoYear || !selectedIsoWeek) return;
+
+            const startDate = getDateOfISOWeek(selectedIsoYear, selectedIsoWeek);
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+            label.innerText = `${formatShortDate(startDate)} - ${formatShortDate(endDate)}`;
+        }
+
+        function initialiseIsoWeekPicker() {
+            const currentInfo = getISOWeekInfo(new Date());
+            selectedIsoYear = currentInfo.year;
+            selectedIsoWeek = currentInfo.week;
+            populateIsoYearOptions();
+            populateIsoWeekOptions();
+            updateSelectedWeekLabel();
+        }
+
+        function onIsoYearChange() {
+            selectedIsoYear = parseInt(document.getElementById('iso-week-year').value, 10);
+            selectedIsoWeek = 1;
+            populateIsoWeekOptions();
+            updateSelectedWeekLabel();
+        }
+
+        function applySelectedIsoWeek() {
+            selectedIsoYear = parseInt(document.getElementById('iso-week-year').value, 10);
+            selectedIsoWeek = parseInt(document.getElementById('iso-week-select').value, 10);
+            updateSelectedWeekLabel();
             loadData();
+        }
+
+        function resetToCurrentIsoWeek() {
+            const currentInfo = getISOWeekInfo(new Date());
+            selectedIsoYear = currentInfo.year;
+            selectedIsoWeek = currentInfo.week;
+            populateIsoYearOptions();
+            populateIsoWeekOptions();
+            updateSelectedWeekLabel();
+            loadData();
+        }
+
+        function getSelectedWeekRange() {
+            if (!selectedIsoYear || !selectedIsoWeek) {
+                const currentInfo = getISOWeekInfo(new Date());
+                selectedIsoYear = currentInfo.year;
+                selectedIsoWeek = currentInfo.week;
+            }
+            const startDate = getDateOfISOWeek(selectedIsoYear, selectedIsoWeek);
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 7);
+            return { startDate, endDate };
+        }
+
+        function isSelectedCurrentIsoWeek() {
+            const currentInfo = getISOWeekInfo(new Date());
+            return selectedIsoYear === currentInfo.year && selectedIsoWeek === currentInfo.week;
         }
 
         function getCheckColor(status) {
@@ -555,17 +679,16 @@
             await loadFuelCards(); 
 
             try {
-                const now = new Date();
-                const day = now.getDay();
-                const diff = day === 0 ? -6 : 1 - day;
-                let startDate = new Date(now.setDate(now.getDate() + diff));
-                startDate.setHours(0,0,0,0);
-                if (isPreviousWeek) startDate.setDate(startDate.getDate() - 7);
-                let endDate = new Date(startDate);
-                endDate.setDate(startDate.getDate() + 7);
+                const { startDate, endDate } = getSelectedWeekRange();
+                updateSelectedWeekLabel();
 
-                let todayMidnight = new Date();
-                todayMidnight.setHours(0, 0, 0, 0);
+                let checkCutoffDate;
+                if (isSelectedCurrentIsoWeek()) {
+                    checkCutoffDate = new Date();
+                    checkCutoffDate.setHours(0, 0, 0, 0);
+                } else {
+                    checkCutoffDate = new Date(startDate);
+                }
 
                 const [vResponse, tResponse, fResponse] = await Promise.all([
                     _supabase.from('daily_vehicle_checks').select('*')
@@ -591,7 +714,7 @@
                             if(!driverVChecks[key]) driverVChecks[key] = new Set();
                             driverVChecks[key].add(dateStr);
 
-                            if (!vehicleData[key] && new Date(check.created_at) >= todayMidnight) {
+                            if (!vehicleData[key] && new Date(check.created_at) >= checkCutoffDate) {
                                 vehicleData[key] = {
                                     status: check.condition_status || "No Check",
                                     reg: check.registration || "No Check",
@@ -615,7 +738,7 @@
                             if(!driverTChecks[key]) driverTChecks[key] = new Set();
                             driverTChecks[key].add(dateStr);
 
-                            if (!trailerData[key] && new Date(check.created_at) >= todayMidnight) {
+                            if (!trailerData[key] && new Date(check.created_at) >= checkCutoffDate) {
                                 trailerData[key] = {
                                     status: check.condition_status || "No Check",
                                     trailer_no: check.trailer_number || "No Check",
@@ -954,14 +1077,8 @@
             const tbody = document.getElementById('fuel-table-body');
             tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; padding:40px;'>Loading fuel logs...</td></tr>";
 
-            const now = new Date();
-            const day = now.getDay();
-            const diff = day === 0 ? -6 : 1 - day;
-            let startDate = new Date(now.setDate(now.getDate() + diff));
-            startDate.setHours(0,0,0,0);
-            if (isPreviousWeek) startDate.setDate(startDate.getDate() - 7);
-            let endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + 7);
+            const { startDate, endDate } = getSelectedWeekRange();
+            updateSelectedWeekLabel();
 
             try {
                 const { data, error } = await _supabase
@@ -1018,14 +1135,8 @@
             const tbody = document.getElementById('trailer-table-body');
             tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:40px;'>Loading trailer logs...</td></tr>";
 
-            const now = new Date();
-            const day = now.getDay();
-            const diff = day === 0 ? -6 : 1 - day;
-            let startDate = new Date(now.setDate(now.getDate() + diff));
-            startDate.setHours(0,0,0,0);
-            if (isPreviousWeek) startDate.setDate(startDate.getDate() - 7);
-            let endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + 7);
+            const { startDate, endDate } = getSelectedWeekRange();
+            updateSelectedWeekLabel();
 
             try {
                 const { data, error } = await _supabase
@@ -1067,7 +1178,10 @@
             }
         }
 
-        window.onload = loadData;
+        window.onload = () => {
+            initialiseIsoWeekPicker();
+            loadData();
+        };
         setInterval(loadData, 60000);
     </script>
 </body>
