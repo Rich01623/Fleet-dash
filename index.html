@@ -1182,7 +1182,15 @@
             initialiseIsoWeekPicker();
             loadData();
         };
-        setInterval(loadData, 60000);
+
+        // Auto-refresh every 15 minutes instead of every 60 seconds to reduce Supabase egress.
+        // The manual Refresh button still works instantly because it still calls loadData() directly.
+        // This also avoids refreshing while the browser tab is hidden/minimised.
+        setInterval(() => {
+            if (!document.hidden) {
+                loadData();
+            }
+        }, 900000);
     </script>
 </body>
 </html>
